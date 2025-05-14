@@ -14,4 +14,4 @@ htmlcov
 .env
 *.env
 !*.env.example
-health_insurance_au/data/used_members.json
+data
