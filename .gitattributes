@@ -1,0 +1,19 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text diff=python
+
+# Shell scripts should use LF
+*.sh text eol=lf
+
+# SQL files
+*.sql text
+
+# Documentation
+*.md text
+*.txt text
+
+# Exclude from language statistics
+docs/* linguist-documentation
+bin/* linguist-vendored

@@ -16,6 +16,33 @@ This project simulates an Australian health insurance company's operational data
 - Uses SQL Server Change Data Capture (CDC) for change tracking
 - Configurable simulation parameters
 
+## Project Structure
+
+The project is organized into the following directories:
+
+- `health_insurance_au/` - Main Python package
+  - `api/` - API endpoints (if needed)
+  - `cli/` - Command-line interfaces
+  - `core/` - Core business logic and constants
+  - `db/` - Database-specific code
+  - `integration/` - Integration with external systems
+  - `models/` - Data models
+  - `simulation/` - Simulation modules
+  - `utils/` - Utility functions
+- `scripts/` - Standalone Python scripts
+  - `db/` - Database-related scripts
+  - `simulation/` - Simulation-related scripts
+  - `utils/` - Utility scripts
+- `bin/` - Shell scripts for running operations
+- `config/` - Configuration files
+- `data/` - Data files
+- `docs/` - Documentation
+- `logs/` - Log files
+- `reports/` - Generated reports
+- `tests/` - Test suite
+  - `unit/` - Unit tests
+  - `integration/` - Integration tests
+
 ## Documentation
 
 Detailed documentation is available in the `docs/` directory:
@@ -33,18 +60,47 @@ Detailed documentation is available in the `docs/` directory:
 - ODBC Driver 17 for SQL Server
 - pyodbc package
 
+### Installation
+
+#### Using pip
+
+```bash
+# Install from the current directory
+pip install -e .
+```
+
+#### Manual Setup
+
+1. Clone this repository
+2. Set up your database configuration (see below)
+3. Run the initialization script:
+   ```bash
+   ./bin/initialize_db.sh
+   ```
+4. Add initial data:
+   ```bash
+   ./bin/add_initial_data.sh
+   ```
+
 ### Database Configuration
 
-The project uses environment variables or a configuration file to store database credentials. This approach avoids hardcoding sensitive information in the code.
-
-#### Configuration Methods (in order of precedence)
+The project uses multiple methods for configuring database connections, with the following order of precedence:
 
 1. Command-line arguments (highest precedence)
 2. Environment variables
-3. Configuration file (db_config.env)
+3. Configuration file (`config/db_config.env`)
 4. Default values (lowest precedence)
 
-#### Environment Variables
+#### Using a Configuration File
+
+Copy the example configuration file and edit it with your database credentials:
+
+```bash
+cp config/db_config.env.example config/db_config.env
+# Edit config/db_config.env with your database credentials
+```
+
+#### Using Environment Variables
 
 You can set the following environment variables:
 
@@ -56,59 +112,40 @@ export DB_PASSWORD=your_password
 export DB_DRIVER="{ODBC Driver 17 for SQL Server}"
 ```
 
-#### Configuration File
+## Usage
 
-Alternatively, create a file named `db_config.env` in the `health_insurance_au` directory with the following content:
+### Command-Line Tools
 
-```
-DB_SERVER=your_server_address
-DB_DATABASE=your_database_name
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-DB_DRIVER={ODBC Driver 17 for SQL Server}
-```
-
-A template file `db_config.env.example` is provided for reference.
-
-#### Command-line Arguments
-
-All scripts accept command-line arguments to override the database configuration:
+After installation, you can use the following command-line tools:
 
 ```bash
-python initialize_db.py --server your_server_address --username your_username --password your_password --database your_database_name
+# Initialize the database
+hi-init-db
+
+# Add initial data
+hi-add-data
+
+# Enable CDC
+hi-enable-cdc
+
+# Run a simulation
+hi-simulation
 ```
 
-You can also specify a custom environment file:
+### Shell Scripts
+
+Alternatively, you can use the shell scripts in the `bin/` directory:
 
 ```bash
-python initialize_db.py --env-file /path/to/your/env/file
+# Initialize the database
+./bin/initialize_db.sh
+
+# Add initial data
+./bin/add_initial_data.sh
+
+# Run a complete simulation
+./bin/run_complete_simulation.sh
 ```
-
-#### Security Notes
-
-- The `db_config.env` file is included in `.gitignore` to prevent accidentally committing credentials
-- For production environments, consider using a secure vault or key management service
-
-### Installation
-
-1. Clone this repository
-2. Set up your database configuration using one of the methods above
-3. Run the initialization script to set up the database:
-   ```
-   python initialize_db.py
-   ```
-   or use the shell script wrapper:
-   ```
-   ./initialize_db.sh
-   ```
-4. Add initial data to the database:
-   ```
-   python add_initial_data.py
-   ```
-   or use the shell script wrapper:
-   ```
-   ./add_initial_data.sh
-   ```
 
 ## Database Structure
 
@@ -131,61 +168,13 @@ The database is organized into the following schemas:
   - SyntheaEncounters
   - SyntheaProcedures
 
-## Usage
-
-### Run a complete simulation
-
-```bash
-./run_complete_simulation.sh
-```
-
-This script will:
-1. Initialize the database (with the `--drop` option to start fresh)
-2. Add initial data (50 members, 15 coverage plans, 30 providers)
-3. Run a historical simulation from January 1, 2023 to December 31, 2023 with weekly frequency
-
-### Individual Commands
-
-1. Initialize the database:
-   ```bash
-   python initialize_db.py
-   ```
-
-2. Add initial data:
-   ```bash
-   python add_initial_data.py
-   ```
-
-3. Enable CDC (Change Data Capture):
-   ```bash
-   python enable_cdc.py
-   ```
-
 ## Simulation Parameters
 
-The simulation can be customized with various parameters:
+The simulation can be customized with various parameters. See `config/simulation.conf` for available options, or run:
 
-- **Daily Simulation**:
-  - `--date`: Simulation date (default: today)
-  - `--members`: Number of new members to add
-  - `--plans`: Number of new plans to add
-  - `--policies`: Number of new policies to create
-  - `--hospital-claims`: Number of hospital claims to generate
-  - `--general-claims`: Number of general claims to generate
-  - Various flags to skip specific operations
-
-- **Historical Simulation**:
-  - `--start-date`: Start date for the simulation
-  - `--end-date`: End date for the simulation (default: today)
-  - `--frequency`: Simulation frequency (daily, weekly, monthly)
-
-- **Synthea Integration**:
-  - `--dir`: Directory containing Synthea FHIR JSON files
-  - `--patients`: Limit on number of patients to import
-  - `--encounters`: Limit on number of encounters to import
-  - `--procedures`: Limit on number of procedures to import
-  - `--claims`: Limit on number of claims to generate
-  - Various flags to skip specific operations
+```bash
+hi-simulation --help
+```
 
 ## Australian Health Insurance Specifics
 
@@ -200,48 +189,29 @@ The simulation includes Australian-specific health insurance features:
 
 ## Change Data Capture (CDC)
 
-This project uses SQL Server's Change Data Capture (CDC) feature to track changes to the data. CDC captures insert, update, and delete operations applied to SQL Server tables, making the details of the changes available in relational tables.
+This project uses SQL Server's Change Data Capture (CDC) feature to track changes to the data.
 
 ### CDC Setup
 
 To enable CDC on the database:
 
 ```bash
-python enable_cdc.py
-```
-or use the shell script wrapper:
-```bash
-./enable_cdc.sh
+hi-enable-cdc
 ```
 
-This script will:
-1. Enable CDC on the database
-2. Enable CDC on all relevant tables
+or use the shell script:
+
+```bash
+./bin/enable_cdc.sh
+```
 
 ### Monitoring CDC Changes
 
 To monitor CDC changes:
 
 ```bash
-./monitor_cdc.sh --schema Insurance --table Members --hours 24
+hi-monitor-cdc --schema Insurance --table Members --hours 24
 ```
-
-Options:
-- `--schema`: Schema name (default: Insurance)
-- `--table`: Table name (default: Members)
-- `--hours`: Number of hours to look back (default: 24)
-- `--list-tables`: List all tables with CDC enabled
-- `--net-changes`: Show only net changes (final state of each row)
-
-## Data Warehouse Considerations
-
-This operational database is designed to be a good source for data warehouse demonstrations:
-
-- Change Data Capture (CDC) tracks all data modifications
-- Daily operations create realistic data patterns
-- Multiple related entities for dimensional modeling
-- Integration with external data sources (Synthea)
-- Australian-specific business rules and regulations
 
 ## Testing
 
@@ -249,53 +219,30 @@ The project includes a comprehensive test suite to ensure code quality and relia
 
 ### Running Tests
 
-To run the tests, use the provided `run_tests.sh` script:
+To run the tests, use the provided script:
 
 ```bash
-# Run unit tests (default)
-./run_tests.sh
-
-# Run integration tests only
-./run_tests.sh integration
-
-# Run all tests (unit and integration)
-./run_tests.sh all
+# Run all tests
+./bin/run_tests.sh
 
 # Run tests with coverage report
-./run_tests.sh coverage
+./bin/run_tests.sh coverage
 ```
 
-### Test Structure
-
-- **Unit Tests**: Test individual components in isolation
-  - Models
-  - Database utilities
-  - Claims generation
-  - CDC utilities
-  - Synthea integration
-
-- **Integration Tests**: Test components working together
-  - Database operations
-  - End-to-end workflows
-
-### Test Dependencies
-
-The testing framework uses:
-- pytest: Testing framework
-- pytest-cov: Coverage reporting
-- pytest-mock: Mocking functionality
-
-Install test dependencies with:
+Or use pytest directly:
 
 ```bash
-pip install -r requirements-dev.txt
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=health_insurance_au
 ```
 
-### Integration Test Configuration
+## Contributing
 
-Integration tests require a connection to the actual database. These tests are skipped by default unless the `TEST_DB` environment variable is set to `true`:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```bash
-export TEST_DB=true
-python -m pytest tests/integration
-```
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
