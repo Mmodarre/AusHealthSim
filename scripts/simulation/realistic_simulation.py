@@ -35,20 +35,42 @@ def generate_random_datetime(simulation_date):
     random_second = random.randint(0, 59)
     return datetime.combine(simulation_date, time(random_hour, random_minute, random_second))
 
+def get_active_members_count() -> int:
+    """
+    Get the count of active members from the database.
+    
+    Returns:
+        The number of active members in the database
+    """
+    from health_insurance_au.utils.db_utils import execute_query
+    
+    try:
+        result = execute_query("SELECT COUNT(*) AS ActiveMemberCount FROM Insurance.Members WHERE IsActive = 1")
+        if result and 'ActiveMemberCount' in result[0]:
+            return result[0]['ActiveMemberCount']
+        return 100  # Default fallback value if query fails
+    except Exception as e:
+        logger.error(f"Error getting active members count: {e}")
+        return 100  # Default fallback value if query fails
+
 def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
     """
-    Calculate realistic parameters for daily simulation based on the number of members.
+    Calculate realistic parameters for daily simulation based on the number of active members.
     
     Args:
         base_members_count: Base number of new members per day
     
     Returns:
-        Dictionary of parameters for the daily simulation
+        Dictionary of parameters for the daily simulation based on total active members
     """
     # Add some randomness to the base count (±20%)
     members_count = max(1, int(base_members_count * random.uniform(0.8, 1.2)))
     
-    # Calculate other parameters based on the members count
+    # Get the total number of active members from the database
+    active_members_count = get_active_members_count()
+    logger.info(f"Found {active_members_count} active members in the database")
+    
+    # Calculate other parameters based on the active members count
     # These ratios are designed to create realistic relationships between parameters
     params = {
         "add_new_members": True,
@@ -58,9 +80,9 @@ def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
         "add_new_plans": random.random() < 0.01,
         "new_plans_count": 1 if random.random() < 0.01 else 0,
         
-        # New providers (about 10% of member count)
+        # New providers (about 0.5% of active member count)
         "add_new_providers": True,
-        "new_providers_count": max(1, int(members_count * 0.1)),
+        "new_providers_count": max(1, int(active_members_count * 0.005)),
         
         # New policies are roughly 60-80% of new members
         "create_new_policies": True,
@@ -82,13 +104,13 @@ def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
         "process_policy_changes": True,
         "policy_change_percentage": random.uniform(0.5, 1.5),
         
-        # Hospital claims are roughly 10-20% of the member count
+        # Hospital claims are roughly 1-2% of active member count
         "generate_hospital_claims": True,
-        "hospital_claims_count": max(1, int(members_count * random.uniform(0.1, 0.2))),
+        "hospital_claims_count": max(1, int(active_members_count * random.uniform(0.01, 0.02))),
         
-        # General claims are roughly 30-50% of the member count
+        # General claims are roughly 3-5% of active member count
         "generate_general_claims": True,
-        "general_claims_count": max(1, int(members_count * random.uniform(0.3, 0.5))),
+        "general_claims_count": max(1, int(active_members_count * random.uniform(0.03, 0.05))),
         
         # Always process premium payments
         "process_premium_payments": True,
