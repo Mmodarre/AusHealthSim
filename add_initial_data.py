@@ -7,16 +7,17 @@ import sys
 import os
 import json
 from datetime import datetime, date, timedelta
-
-# Add the parent directory to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from health_insurance_au.utils.data_loader import load_sample_data, convert_to_members
 from health_insurance_au.simulation.coverage_plans import generate_coverage_plans
 from health_insurance_au.simulation.providers import generate_providers
 from health_insurance_au.utils.db_utils import execute_query, execute_non_query, bulk_insert
 from health_insurance_au.config import DB_CONFIG, LOG_CONFIG
 from health_insurance_au.utils.logging_config import configure_logging, get_logger
+
+# Add the parent directory to the path so we can import our modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 
 # Set up logging
 logger = get_logger(__name__)
