@@ -89,18 +89,24 @@ def execute_query(query: str, params: Optional[Tuple] = None) -> List[Dict[str, 
         logger.error(f"Database query error: {e}")
         return []
 
-def execute_non_query(query: str, params: Optional[Tuple] = None) -> int:
+def execute_non_query(query: str, params: Optional[Tuple] = None, simulation_date: Optional[date] = None) -> int:
     """
     Execute a non-query SQL statement (INSERT, UPDATE, DELETE) and return the number of affected rows.
     
     Args:
         query: The SQL statement to execute
         params: Optional parameters for the statement
+        simulation_date: The date to use for LastModified (if None, uses current date)
         
     Returns:
         The number of affected rows
     """
     try:
+        # If simulation_date is provided and the query contains GETDATE(), replace it
+        if simulation_date and 'GETDATE()' in query:
+            formatted_date = simulation_date.strftime("'%Y-%m-%d'")
+            query = query.replace('GETDATE()', f"CAST({formatted_date} AS DATETIME)")
+        
         with get_connection() as conn:
             cursor = conn.cursor()
             
@@ -175,13 +181,14 @@ def execute_stored_procedure(proc_name: str, params: Optional[Dict[str, Any]] = 
         logger.error(f"Database stored procedure error: {e}")
         return []
 
-def bulk_insert(table_name: str, data: List[Dict[str, Any]]) -> int:
+def bulk_insert(table_name: str, data: List[Dict[str, Any]], simulation_date: Optional[date] = None) -> int:
     """
     Perform a bulk insert operation.
     
     Args:
         table_name: The name of the table to insert into
         data: A list of dictionaries representing the rows to insert
+        simulation_date: The date to use for LastModified (if None, uses current date)
         
     Returns:
         The number of inserted rows
@@ -195,6 +202,24 @@ def bulk_insert(table_name: str, data: List[Dict[str, Any]]) -> int:
             
             # Get column names from the first dictionary
             columns = list(data[0].keys())
+            
+            # Check if LastModified column exists in the table
+            has_last_modified = False
+            table_info_query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table_name.split('.')[-1]}' AND COLUMN_NAME = 'LastModified'"
+            cursor.execute(table_info_query)
+            if cursor.fetchone():
+                has_last_modified = True
+            
+            # If the table has LastModified and it's not in the data, add it
+            if has_last_modified and 'LastModified' not in columns:
+                # Add LastModified to each row with the simulation date or current date
+                last_modified_value = simulation_date if simulation_date else datetime.now().date()
+                for row in data:
+                    row['LastModified'] = last_modified_value
+                
+                # Update columns list
+                columns = list(data[0].keys())
+            
             columns_str = ", ".join(columns)
             
             # Create placeholders for the VALUES clause

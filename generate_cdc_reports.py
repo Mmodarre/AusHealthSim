@@ -4,11 +4,10 @@ Generate reports from CDC changes in the Health Insurance AU database.
 import argparse
 import logging
 from datetime import datetime, timedelta
-import json
 import csv
 import os
 
-from health_insurance_au.utils.cdc_utils_pyodbc import get_cdc_net_changes, list_cdc_tables
+from health_insurance_au.utils.cdc_utils import get_cdc_net_changes, list_cdc_tables
 
 # Set up logging
 logging.basicConfig(

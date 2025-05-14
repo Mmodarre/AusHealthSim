@@ -91,6 +91,19 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
     # Track which members already have policies
     members_with_policies = set()
     
+    # Get existing policy-member relationships from the database
+    from health_insurance_au.utils.db_utils import execute_query
+    existing_relationships = execute_query("SELECT PolicyID, MemberID FROM Insurance.PolicyMembers")
+    existing_policy_member_pairs = set((r['PolicyID'], r['MemberID']) for r in existing_relationships)
+    
+    # Get the next available PolicyID
+    policy_id_result = execute_query("SELECT MAX(PolicyID) as MaxID FROM Insurance.Policies")
+    next_policy_id = 1
+    if policy_id_result and policy_id_result[0]['MaxID'] is not None:
+        next_policy_id = policy_id_result[0]['MaxID'] + 1
+    
+    logger.info(f"Starting with PolicyID: {next_policy_id}")
+    
     for i in range(count):
         # Find a member who doesn't already have a policy
         available_members = [m for idx, m in enumerate(members) if idx not in members_with_policies]
@@ -181,15 +194,24 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
         
         policies.append(policy)
         
-        # Add primary member to policy_members
-        policy_member = PolicyMember(
-            policy_id=i + 1,  # Assuming PolicyID starts at 1
-            member_id=primary_member_idx + 1,  # Assuming MemberID starts at 1
-            relationship_to_primary='Self',
-            start_date=start_date
-        )
+        current_policy_id = next_policy_id + i
         
-        policy_members.append(policy_member)
+        # Check if the primary member can be added to this policy
+        primary_member_db_id = primary_member_idx + 1
+        if (current_policy_id, primary_member_db_id) not in existing_policy_member_pairs:
+            # Add primary member to policy_members
+            policy_member = PolicyMember(
+                policy_id=current_policy_id,
+                member_id=primary_member_db_id,
+                relationship_to_primary='Self',
+                start_date=start_date
+            )
+            
+            policy_members.append(policy_member)
+            # Track this relationship to avoid duplicates in the current batch
+            existing_policy_member_pairs.add((current_policy_id, primary_member_db_id))
+        else:
+            logger.warning(f"Skipping duplicate policy-member relationship: Policy {current_policy_id}, Member {primary_member_db_id}")
         
         # Add additional members based on coverage type
         if coverage_type in ['Couple', 'Family']:
@@ -204,14 +226,20 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
                 partner_idx = random.choice(partner_candidates)
                 members_with_policies.add(partner_idx)
                 
-                policy_member = PolicyMember(
-                    policy_id=i + 1,  # Assuming PolicyID starts at 1
-                    member_id=partner_idx + 1,  # Assuming MemberID starts at 1
-                    relationship_to_primary='Spouse',
-                    start_date=start_date
-                )
-                
-                policy_members.append(policy_member)
+                partner_db_id = partner_idx + 1
+                if (current_policy_id, partner_db_id) not in existing_policy_member_pairs:
+                    policy_member = PolicyMember(
+                        policy_id=current_policy_id,
+                        member_id=partner_db_id,
+                        relationship_to_primary='Spouse',
+                        start_date=start_date
+                    )
+                    
+                    policy_members.append(policy_member)
+                    # Track this relationship
+                    existing_policy_member_pairs.add((current_policy_id, partner_db_id))
+                else:
+                    logger.warning(f"Skipping duplicate policy-member relationship: Policy {current_policy_id}, Member {partner_db_id}")
         
         if coverage_type in ['Family', 'Single Parent']:
             # Try to find 1-3 children (much younger)
@@ -230,14 +258,20 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
                 child_candidates.remove(child_idx)
                 members_with_policies.add(child_idx)
                 
-                policy_member = PolicyMember(
-                    policy_id=i + 1,  # Assuming PolicyID starts at 1
-                    member_id=child_idx + 1,  # Assuming MemberID starts at 1
-                    relationship_to_primary='Child',
-                    start_date=start_date
-                )
-                
-                policy_members.append(policy_member)
+                child_db_id = child_idx + 1
+                if (current_policy_id, child_db_id) not in existing_policy_member_pairs:
+                    policy_member = PolicyMember(
+                        policy_id=current_policy_id,
+                        member_id=child_db_id,
+                        relationship_to_primary='Child',
+                        start_date=start_date
+                    )
+                    
+                    policy_members.append(policy_member)
+                    # Track this relationship
+                    existing_policy_member_pairs.add((current_policy_id, child_db_id))
+                else:
+                    logger.warning(f"Skipping duplicate policy-member relationship: Policy {current_policy_id}, Member {child_db_id}")
     
     logger.info(f"Generated {len(policies)} policies with {len(policy_members)} members")
     return policies, policy_members

@@ -58,13 +58,25 @@ def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
         "add_new_plans": random.random() < 0.01,
         "new_plans_count": 1 if random.random() < 0.01 else 0,
         
+        # New providers (about 10% of member count)
+        "add_new_providers": True,
+        "new_providers_count": max(1, int(members_count * 0.1)),
+        
         # New policies are roughly 60-80% of new members
         "create_new_policies": True,
         "new_policies_count": max(1, int(members_count * random.uniform(0.6, 0.8))),
         
         # About 1-3% of existing members update their information each day
         "update_members": True,
-        "member_update_percentage": random.uniform(5.0, 7.0),
+        "member_update_percentage": random.uniform(1.0, 3.0),
+        
+        # About 1-2.5%% of providers update their details each day
+        "update_providers": True,
+        "provider_update_percentage": random.uniform(1.0, 2.5),
+        
+        # About 0.5-1 % of providers end their agreements each day
+        "end_provider_agreements": True,
+        "provider_agreement_end_percentage": random.uniform(0.5, 1.0),
         
         # About 0.5-1.5% of policies change each day
         "process_policy_changes": True,
@@ -133,7 +145,29 @@ def run_realistic_simulation(start_date: date, end_date: date, base_members_per_
         # Run the daily simulation with the calculated parameters
         simulation.run_daily_simulation(
             simulation_date=current_date,
-            **params
+            add_new_members=params["add_new_members"],
+            new_members_count=params["new_members_count"],
+            add_new_plans=params["add_new_plans"],
+            new_plans_count=params["new_plans_count"],
+            add_new_providers=params["add_new_providers"],
+            new_providers_count=params["new_providers_count"],
+            create_new_policies=params["create_new_policies"],
+            new_policies_count=params["new_policies_count"],
+            update_members=params["update_members"],
+            member_update_percentage=params["member_update_percentage"],
+            update_providers=params["update_providers"],
+            provider_update_percentage=params["provider_update_percentage"],
+            end_provider_agreements=params["end_provider_agreements"],
+            provider_agreement_end_percentage=params["provider_agreement_end_percentage"],
+            process_policy_changes=params["process_policy_changes"],
+            policy_change_percentage=params["policy_change_percentage"],
+            generate_hospital_claims=params["generate_hospital_claims"],
+            hospital_claims_count=params["hospital_claims_count"],
+            generate_general_claims=params["generate_general_claims"],
+            general_claims_count=params["general_claims_count"],
+            process_premium_payments=params["process_premium_payments"],
+            process_claims=params["process_claims"],
+            claim_process_percentage=params["claim_process_percentage"]
         )
         
         # Move to the next day

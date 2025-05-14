@@ -151,12 +151,13 @@ class HealthInsuranceSimulation:
         
         logger.info(f"Loaded {len(self.members)} members, {len(self.coverage_plans)} coverage plans, and {len(self.providers)} providers from database")
     
-    def add_members(self, count: int = 10):
+    def add_members(self, count: int = 10, simulation_date: Optional[date] = None):
         """
         Add new members to the database.
         
         Args:
             count: Number of members to add
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Adding {count} new members...")
         
@@ -175,7 +176,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         member_dicts = [member.to_dict() for member in new_members]
         try:
-            rows_affected = bulk_insert("Insurance.Members", member_dicts)
+            rows_affected = bulk_insert("Insurance.Members", member_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new members to the database")
             
             # Add to in-memory collection
@@ -183,12 +184,13 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding members to database: {e}")
     
-    def add_coverage_plans(self, count: int = 5):
+    def add_coverage_plans(self, count: int = 5, simulation_date: Optional[date] = None):
         """
         Add new coverage plans to the database.
         
         Args:
             count: Number of plans to add
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Adding {count} new coverage plans...")
         
@@ -201,7 +203,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         plan_dicts = [plan.to_dict() for plan in new_plans]
         try:
-            rows_affected = bulk_insert("Insurance.CoveragePlans", plan_dicts)
+            rows_affected = bulk_insert("Insurance.CoveragePlans", plan_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new coverage plans to the database")
             
             # Add to in-memory collection
@@ -209,12 +211,13 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding coverage plans to database: {e}")
     
-    def add_providers(self, count: int = 20):
+    def add_providers(self, count: int = 20, simulation_date: Optional[date] = None):
         """
         Add new providers to the database.
         
         Args:
             count: Number of providers to add
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Adding {count} new providers...")
         
@@ -227,7 +230,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         provider_dicts = [provider.to_dict() for provider in new_providers]
         try:
-            rows_affected = bulk_insert("Insurance.Providers", provider_dicts)
+            rows_affected = bulk_insert("Insurance.Providers", provider_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new providers to the database")
             
             # Add to in-memory collection
@@ -235,12 +238,13 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding providers to database: {e}")
     
-    def create_new_policies(self, count: int = 10):
+    def create_new_policies(self, count: int = 10, simulation_date: Optional[date] = None):
         """
         Create new policies for members.
         
         Args:
             count: Number of policies to create
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Creating {count} new policies...")
         
@@ -257,7 +261,7 @@ class HealthInsuranceSimulation:
         # Insert policies into database
         policy_dicts = [policy.to_dict() for policy in new_policies]
         try:
-            rows_affected = bulk_insert("Insurance.Policies", policy_dicts)
+            rows_affected = bulk_insert("Insurance.Policies", policy_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new policies to the database")
             
             # Add to in-memory collection
@@ -269,7 +273,7 @@ class HealthInsuranceSimulation:
         # Insert policy members into database
         policy_member_dicts = [pm.to_dict() for pm in new_policy_members]
         try:
-            rows_affected = bulk_insert("Insurance.PolicyMembers", policy_member_dicts)
+            rows_affected = bulk_insert("Insurance.PolicyMembers", policy_member_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new policy members to the database")
             
             # Add to in-memory collection
@@ -277,12 +281,13 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding policy members to database: {e}")
     
-    def update_members(self, percentage: float = 5.0):
+    def update_members(self, percentage: float = 5.0, simulation_date: Optional[date] = None):
         """
         Update a percentage of members with new information.
         
         Args:
             percentage: Percentage of members to update
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Updating approximately {percentage}% of members...")
         
@@ -317,18 +322,19 @@ class HealthInsuranceSimulation:
                 SET Email = ?, MobilePhone = ?, AddressLine1 = ?, LastModified = GETDATE()
                 WHERE MemberNumber = ?
                 """
-                execute_non_query(query, (member.email, member.mobile_phone, member.address_line1, member.member_number))
+                execute_non_query(query, (member.email, member.mobile_phone, member.address_line1, member.member_number), simulation_date)
             except Exception as e:
                 logger.error(f"Error updating member {member.member_number}: {e}")
         
         logger.info(f"Updated {len(members_to_update)} members")
     
-    def process_policy_changes(self, percentage: float = 2.0):
+    def process_policy_changes(self, percentage: float = 2.0, simulation_date: Optional[date] = None):
         """
         Process changes to a percentage of policies.
         
         Args:
             percentage: Percentage of policies to change
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Processing changes for approximately {percentage}% of policies...")
         
@@ -380,18 +386,19 @@ class HealthInsuranceSimulation:
                     policy.payment_method, 
                     policy.current_premium, 
                     policy.policy_number
-                ))
+                ), simulation_date)
             except Exception as e:
                 logger.error(f"Error updating policy {policy.policy_number}: {e}")
         
         logger.info(f"Processed changes for {len(policies_to_change)} policies")
     
-    def generate_hospital_claims(self, count: int = 5):
+    def generate_hospital_claims(self, count: int = 5, simulation_date: Optional[date] = None):
         """
         Generate hospital claims.
         
         Args:
             count: Number of claims to generate
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Generating {count} hospital claims...")
         
@@ -408,7 +415,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         claim_dicts = [claim.to_dict() for claim in new_claims]
         try:
-            rows_affected = bulk_insert("Insurance.Claims", claim_dicts)
+            rows_affected = bulk_insert("Insurance.Claims", claim_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new hospital claims to the database")
             
             # Add to in-memory collection
@@ -416,12 +423,13 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding hospital claims to database: {e}")
     
-    def generate_general_treatment_claims(self, count: int = 15):
+    def generate_general_treatment_claims(self, count: int = 15, simulation_date: Optional[date] = None):
         """
         Generate general treatment claims.
         
         Args:
             count: Number of claims to generate
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Generating {count} general treatment claims...")
         
@@ -438,7 +446,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         claim_dicts = [claim.to_dict() for claim in new_claims]
         try:
-            rows_affected = bulk_insert("Insurance.Claims", claim_dicts)
+            rows_affected = bulk_insert("Insurance.Claims", claim_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new general treatment claims to the database")
             
             # Add to in-memory collection
@@ -471,7 +479,7 @@ class HealthInsuranceSimulation:
         # Insert into database
         payment_dicts = [payment.to_dict() for payment in new_payments]
         try:
-            rows_affected = bulk_insert("Insurance.PremiumPayments", payment_dicts)
+            rows_affected = bulk_insert("Insurance.PremiumPayments", payment_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new premium payments to the database")
             
             # Add to in-memory collection
@@ -490,18 +498,19 @@ class HealthInsuranceSimulation:
                             policy.last_premium_paid_date, 
                             policy.next_premium_due_date, 
                             policy.policy_number
-                        ))
+                        ), simulation_date)
                     except Exception as e:
                         logger.error(f"Error updating policy {policy.policy_number} payment dates: {e}")
         except Exception as e:
             logger.error(f"Error adding premium payments to database: {e}")
     
-    def process_claim_assessments(self, percentage: float = 80.0):
+    def process_claim_assessments(self, percentage: float = 80.0, simulation_date: Optional[date] = None):
         """
         Process a percentage of submitted claims.
         
         Args:
             percentage: Percentage of submitted claims to process
+            simulation_date: The date to use for LastModified
         """
         logger.info(f"Processing approximately {percentage}% of submitted claims...")
         
@@ -530,7 +539,7 @@ class HealthInsuranceSimulation:
             )[0]
             
             # Set processed date
-            processed_date = date.today()
+            processed_date = simulation_date if simulation_date else date.today()
             
             # Set payment date and rejection reason
             payment_date = None
@@ -561,7 +570,7 @@ class HealthInsuranceSimulation:
                     payment_date, 
                     rejection_reason, 
                     claim['ClaimNumber']
-                ))
+                ), simulation_date)
             except Exception as e:
                 logger.error(f"Error updating claim {claim['ClaimNumber']}: {e}")
         
@@ -574,10 +583,16 @@ class HealthInsuranceSimulation:
         new_members_count: int = 5,
         add_new_plans: bool = False,
         new_plans_count: int = 0,
+        add_new_providers: bool = True,
+        new_providers_count: int = 5,
         create_new_policies: bool = True,
         new_policies_count: int = 3,
         update_members: bool = True,
         member_update_percentage: float = 2.0,
+        update_providers: bool = True,
+        provider_update_percentage: float = 5.0,
+        end_provider_agreements: bool = True,
+        provider_agreement_end_percentage: float = 1.0,
         process_policy_changes: bool = True,
         policy_change_percentage: float = 1.0,
         generate_hospital_claims: bool = True,
@@ -597,10 +612,16 @@ class HealthInsuranceSimulation:
             new_members_count: Number of new members to add
             add_new_plans: Whether to add new coverage plans
             new_plans_count: Number of new plans to add
+            add_new_providers: Whether to add new providers
+            new_providers_count: Number of new providers to add
             create_new_policies: Whether to create new policies
             new_policies_count: Number of new policies to create
             update_members: Whether to update existing members
             member_update_percentage: Percentage of members to update
+            update_providers: Whether to update provider details
+            provider_update_percentage: Percentage of providers to update
+            end_provider_agreements: Whether to end provider agreements
+            provider_agreement_end_percentage: Percentage of provider agreements to end
             process_policy_changes: Whether to process policy changes
             policy_change_percentage: Percentage of policies to change
             generate_hospital_claims: Whether to generate hospital claims
@@ -621,31 +642,45 @@ class HealthInsuranceSimulation:
         
         # Add new members if requested
         if add_new_members:
-            self.add_members(new_members_count)
+            self.add_members(new_members_count, simulation_date)
         
         # Add new coverage plans if requested
         if add_new_plans:
-            self.add_coverage_plans(new_plans_count)
+            self.add_coverage_plans(new_plans_count, simulation_date)
+            
+        # Add new providers if requested
+        if add_new_providers:
+            self.add_providers(new_providers_count, simulation_date)
         
         # Create new policies if requested
         if create_new_policies:
-            self.create_new_policies(new_policies_count)
+            self.create_new_policies(new_policies_count, simulation_date)
         
         # Update members if requested
         if update_members:
-            self.update_members(member_update_percentage)
+            self.update_members(member_update_percentage, simulation_date)
+            
+        # Update providers if requested
+        if update_providers:
+            from health_insurance_au.simulation.provider_management import update_provider_details
+            update_provider_details(provider_update_percentage, simulation_date)
+            
+        # End provider agreements if requested
+        if end_provider_agreements:
+            from health_insurance_au.simulation.provider_management import end_provider_agreements
+            end_provider_agreements(provider_agreement_end_percentage, simulation_date)
         
         # Process policy changes if requested
         if process_policy_changes:
-            self.process_policy_changes(policy_change_percentage)
+            self.process_policy_changes(policy_change_percentage, simulation_date)
         
         # Generate hospital claims if requested
         if generate_hospital_claims:
-            self.generate_hospital_claims(hospital_claims_count)
+            self.generate_hospital_claims(hospital_claims_count, simulation_date)
         
         # Generate general treatment claims if requested
         if generate_general_claims:
-            self.generate_general_treatment_claims(general_claims_count)
+            self.generate_general_treatment_claims(general_claims_count, simulation_date)
         
         # Process premium payments if requested
         if process_premium_payments:
@@ -653,7 +688,7 @@ class HealthInsuranceSimulation:
         
         # Process claims if requested
         if process_claims:
-            self.process_claim_assessments(claim_process_percentage)
+            self.process_claim_assessments(claim_process_percentage, simulation_date)
         
         logger.info(f"Daily simulation completed for {simulation_date}")
     
