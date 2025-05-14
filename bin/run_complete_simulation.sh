@@ -4,9 +4,10 @@
 
 # Get the directory of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$DIR/.." && pwd )"
 
 # Default environment file
-ENV_FILE="$DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do

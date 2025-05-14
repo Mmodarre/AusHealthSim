@@ -4,9 +4,10 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Default values
-ENV_FILE="$SCRIPT_DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -26,6 +27,6 @@ done
 
 # Run the Python script to enable CDC
 echo "Enabling CDC using environment file: $ENV_FILE..."
-python3 "$SCRIPT_DIR/enable_cdc.py" --env-file "$ENV_FILE"
+python3 "$PROJECT_ROOT/scripts/db/enable_cdc.py" --env-file "$ENV_FILE"
 
 echo "CDC setup completed."

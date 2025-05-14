@@ -4,9 +4,10 @@
 
 # Get the directory of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$DIR/.." && pwd )"
 
 # Default environment file
-ENV_FILE="$DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Default values
 START_DATE=""
@@ -76,7 +77,7 @@ fi
 
 # Run the Python script
 echo "Running realistic simulation from $START_DATE to $END_DATE with $MEMBERS_PER_DAY members per day..."
-python3 "$DIR/realistic_simulation.py" \
+python3 "$PROJECT_ROOT/scripts/simulation/realistic_simulation.py" \
     --start-date "$START_DATE" \
     --end-date "$END_DATE" \
     --members-per-day "$MEMBERS_PER_DAY" \

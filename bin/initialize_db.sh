@@ -4,6 +4,7 @@
 
 # Get the directory of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$DIR/.." && pwd )"
 
 # Default values
 SERVER=""
@@ -11,7 +12,7 @@ USERNAME=""
 PASSWORD=""
 DATABASE=""
 DROP=false
-ENV_FILE="$DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -75,4 +76,4 @@ if [ "$DROP" = true ]; then
 fi
 
 # Run the initialization script
-python3 "$DIR/initialize_db.py" $CMD_ARGS
+python3 "$PROJECT_ROOT/scripts/db/initialize_db.py" $CMD_ARGS

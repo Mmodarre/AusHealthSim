@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import json
 import os
 
-from health_insurance_au.utils.cdc_utils import get_cdc_changes, get_cdc_net_changes, list_cdc_tables
+from health_insurance_au.db.cdc import get_cdc_changes, get_cdc_net_changes, list_cdc_tables
 from health_insurance_au.utils.logging_config import configure_logging, get_logger
 from health_insurance_au.config import LOG_CONFIG
 
@@ -74,7 +74,10 @@ def main():
             logger.info(f"... and {len(changes) - 5} more changes")
         
         # Save all changes to a file
-        output_file = f"cdc_changes_{args.schema}_{args.table}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'reports')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, f"cdc_changes_{args.schema}_{args.table}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        
         with open(output_file, 'w') as f:
             json.dump(changes, f, default=str, indent=2)
         

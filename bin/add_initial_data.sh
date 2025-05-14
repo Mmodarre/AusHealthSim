@@ -4,6 +4,7 @@
 
 # Get the directory of this script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$DIR/.." && pwd )"
 
 # Default values
 SERVER=""
@@ -13,7 +14,7 @@ DATABASE=""
 MEMBERS=50
 PLANS=15
 PROVIDERS=30
-ENV_FILE="$DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -101,4 +102,4 @@ if [ -n "$ENV_FILE" ]; then
 fi
 
 # Run the initialization script
-python3 "$DIR/add_initial_data.py" $CMD_ARGS --members "$MEMBERS" --plans "$PLANS" --providers "$PROVIDERS"
+python3 "$PROJECT_ROOT/scripts/db/add_initial_data.py" $CMD_ARGS --members "$MEMBERS" --plans "$PLANS" --providers "$PROVIDERS"

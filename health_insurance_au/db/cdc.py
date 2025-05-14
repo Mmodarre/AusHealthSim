@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
-from health_insurance_au.utils.db_utils import execute_query
+from health_insurance_au.db.utils import execute_query
 
 # Set up logging
 logging.basicConfig(

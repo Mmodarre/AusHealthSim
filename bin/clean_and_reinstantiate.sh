@@ -4,6 +4,7 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 echo "=== Cleaning up project ==="
 
@@ -15,16 +16,16 @@ echo "Done."
 
 # Clean up any CDC reports
 echo "Cleaning up reports..."
-if [ -d "reports" ]; then
-    rm -rf reports
-    mkdir reports
+if [ -d "$PROJECT_ROOT/reports" ]; then
+    rm -rf "$PROJECT_ROOT/reports"
+    mkdir "$PROJECT_ROOT/reports"
 else
-    mkdir -p reports
+    mkdir -p "$PROJECT_ROOT/reports"
 fi
 echo "Done."
 
 # Default environment file
-ENV_FILE="$SCRIPT_DIR/health_insurance_au/db_config.env"
+ENV_FILE="$PROJECT_ROOT/config/db_config.env"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
