@@ -49,9 +49,6 @@ logs/
 *.log
 reports/
 
-# Data
-data/
-*.json
 
 # IDE
 .idea/

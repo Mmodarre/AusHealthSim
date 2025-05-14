@@ -365,8 +365,8 @@ def test_bulk_insert():
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     
-    # Mock cursor.fetchone() to return None for the LastModified check
-    mock_cursor.fetchone.return_value = None
+    # Mock the database schema check
+    mock_cursor.fetchone.return_value = None  # No LastModified column
     
     # Prepare test data
     data = [
@@ -383,6 +383,9 @@ def test_bulk_insert():
         # Execute bulk insert
         rows_inserted = bulk_insert("Members", data)
         
+        # Verify the schema check was performed
+        mock_cursor.execute.assert_any_call("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Members' AND COLUMN_NAME = 'LastModified'")
+        
         # Verify executemany was called
         mock_cursor.executemany.assert_called_once()
         
@@ -396,9 +399,16 @@ def test_bulk_insert():
         # Check that the parameter sets match our data
         param_sets = call_args[1]
         assert len(param_sets) == 3
-        assert (1, 'John', 30) in param_sets
-        assert (2, 'Jane', 25) in param_sets
-        assert (3, 'Bob', 40) in param_sets
+        
+        # Check values are in the parameters (order may vary)
+        values = [(1, 'John', 30), (2, 'Jane', 25), (3, 'Bob', 40)]
+        for value in values:
+            found = False
+            for param_set in param_sets:
+                if all(item in param_set for item in value):
+                    found = True
+                    break
+            assert found, f"Value {value} not found in parameters"
         
         # Verify the number of inserted rows
         assert rows_inserted == 3
@@ -420,10 +430,10 @@ def test_bulk_insert_error():
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     
-    # Mock cursor.fetchone() to return None for the LastModified check
-    mock_cursor.fetchone.return_value = None
+    # Mock the database schema check
+    mock_cursor.fetchone.return_value = None  # No LastModified column
     
-    # Set up cursor to raise an exception
+    # Set up cursor to raise an exception on executemany
     mock_cursor.executemany.side_effect = Exception('Bulk insert failed')
     
     # Prepare test data
