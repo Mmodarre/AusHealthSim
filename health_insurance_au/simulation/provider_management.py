@@ -2,7 +2,6 @@
 Provider management utilities for the Health Insurance AU simulation.
 """
 import random
-import logging
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 
@@ -10,6 +9,7 @@ from health_insurance_au.models.models import Provider
 from health_insurance_au.simulation.providers import generate_providers, CITIES, STATES
 from health_insurance_au.utils.logging_config import get_logger
 from health_insurance_au.utils.datetime_utils import generate_random_datetime
+from health_insurance_au.utils.db_utils import execute_query, execute_non_query
 
 # Set up logging
 logger = get_logger(__name__)
@@ -22,8 +22,6 @@ def end_provider_agreements(percentage: float = 5.0, simulation_date: Optional[d
         percentage: Percentage of providers to end agreements for
         simulation_date: The date to use for LastModified
     """
-    from health_insurance_au.utils.db_utils import execute_query, execute_non_query
-    
     logger.info(f"Ending agreements for approximately {percentage}% of providers...")
     
     # Get active preferred providers with no end date from database
@@ -70,8 +68,6 @@ def update_provider_details(percentage: float = 10.0, simulation_date: Optional[
         percentage: Percentage of providers to update
         simulation_date: The date to use for LastModified
     """
-    from health_insurance_au.utils.db_utils import execute_query, execute_non_query
-    
     logger.info(f"Updating approximately {percentage}% of providers...")
     
     # Get providers from database

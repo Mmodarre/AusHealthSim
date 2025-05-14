@@ -1,18 +1,14 @@
 """
 Utilities for working with Change Data Capture (CDC) in the Health Insurance AU database.
 """
-import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
 from health_insurance_au.utils.db_utils import execute_query
+from health_insurance_au.utils.logging_config import get_logger
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def get_cdc_changes(schema_name: str, table_name: str, 
                     from_time: Optional[datetime] = None, 

@@ -3,18 +3,15 @@ Policy generator for the Health Insurance AU simulation.
 """
 import random
 import string
-import logging
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 
 from health_insurance_au.models.models import Policy, PolicyMember, Member, CoveragePlan
+from health_insurance_au.utils.logging_config import get_logger
+from health_insurance_au.utils.db_utils import execute_query
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def generate_policy_number() -> str:
     """Generate a random policy number."""
@@ -92,7 +89,6 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
     members_with_policies = set()
     
     # Get existing policy-member relationships from the database
-    from health_insurance_au.utils.db_utils import execute_query
     existing_relationships = execute_query("SELECT PolicyID, MemberID FROM Insurance.PolicyMembers")
     existing_policy_member_pairs = set((r['PolicyID'], r['MemberID']) for r in existing_relationships)
     

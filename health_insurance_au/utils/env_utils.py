@@ -2,11 +2,13 @@
 Environment variable utilities for the Health Insurance AU simulation.
 """
 import os
-import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-logger = logging.getLogger(__name__)
+from health_insurance_au.utils.logging_config import get_logger
+
+# Set up logging
+logger = get_logger(__name__)
 
 def load_env_file(env_file_path: str) -> Dict[str, str]:
     """

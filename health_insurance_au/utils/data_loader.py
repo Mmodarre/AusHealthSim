@@ -3,10 +3,9 @@ Data loading utilities for the Health Insurance AU simulation.
 """
 import json
 import random
-import logging
+import os
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
-import os
 
 from health_insurance_au.config import SAMPLE_DATA_PATH
 from health_insurance_au.models.models import Member

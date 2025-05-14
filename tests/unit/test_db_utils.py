@@ -293,9 +293,14 @@ def test_execute_stored_procedure_multiple_result_sets():
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     
-    # Set up cursor description and fetchall for first result set
-    mock_cursor.description = [('id', None, None, None, None, None, None), 
-                              ('name', None, None, None, None, None, None)]
+    # Create a more complex mock for description that changes between result sets
+    description1 = [('id', None, None, None, None, None, None), 
+                   ('name', None, None, None, None, None, None)]
+    description2 = [('id', None, None, None, None, None, None), 
+                   ('name', None, None, None, None, None, None)]
+    
+    # Configure description to change after nextset is called
+    mock_cursor.description = description1
     
     # Configure fetchall to return different results for each call
     mock_cursor.fetchall.side_effect = [
@@ -305,7 +310,12 @@ def test_execute_stored_procedure_multiple_result_sets():
     
     # Configure nextset to return True first (indicating there's another result set)
     # Then False (indicating no more result sets)
-    mock_cursor.nextset.side_effect = [True, False]
+    def side_effect_nextset():
+        # Change description after first nextset call
+        mock_cursor.description = description2
+        return True
+    
+    mock_cursor.nextset.side_effect = [side_effect_nextset, False]
     
     # Mock the get_connection context manager
     with patch('health_insurance_au.utils.db_utils.get_connection') as mock_get_conn:
@@ -354,6 +364,9 @@ def test_bulk_insert():
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
+    
+    # Mock cursor.fetchone() to return None for the LastModified check
+    mock_cursor.fetchone.return_value = None
     
     # Prepare test data
     data = [
@@ -406,6 +419,9 @@ def test_bulk_insert_error():
     mock_conn = MagicMock()
     mock_cursor = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
+    
+    # Mock cursor.fetchone() to return None for the LastModified check
+    mock_cursor.fetchone.return_value = None
     
     # Set up cursor to raise an exception
     mock_cursor.executemany.side_effect = Exception('Bulk insert failed')

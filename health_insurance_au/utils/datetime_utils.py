@@ -1,9 +1,6 @@
 """
-This patch adds random datetime generation to the claims.py module.
-It modifies the existing functions to use random datetimes for service dates,
-submission dates, processed dates, and payment dates.
+Datetime utilities for the Health Insurance AU simulation.
 """
-
 import random
 from datetime import datetime, time
 

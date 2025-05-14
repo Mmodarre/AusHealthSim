@@ -4,8 +4,6 @@ Command-line interface for initializing the database.
 import argparse
 import sys
 
-from health_insurance_au.db import utils as db_utils
-
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Initialize the health insurance database")

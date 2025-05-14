@@ -2,7 +2,6 @@
 Main simulation module for the Health Insurance AU simulation.
 """
 import random
-import logging
 import json
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional, Tuple
@@ -17,7 +16,6 @@ from health_insurance_au.simulation.providers import generate_providers
 from health_insurance_au.simulation.policies import generate_policies
 from health_insurance_au.simulation.claims import generate_hospital_claims, generate_general_treatment_claims
 from health_insurance_au.simulation.payments import generate_premium_payments
-from health_insurance_au.simulation.provider_management import end_provider_agreements, update_provider_details
 from health_insurance_au.models.models import (
     Member, CoveragePlan, Policy, PolicyMember, 
     Provider, Claim, PremiumPayment

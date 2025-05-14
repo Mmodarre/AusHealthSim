@@ -3,7 +3,6 @@ Claims generator for the Health Insurance AU simulation.
 """
 import random
 import string
-import logging
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 

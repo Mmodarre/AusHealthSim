@@ -3,7 +3,6 @@ Member tracking utilities for the Health Insurance AU simulation.
 """
 import os
 import json
-import logging
 from typing import List, Set, Dict, Any
 
 from health_insurance_au.utils.logging_config import get_logger

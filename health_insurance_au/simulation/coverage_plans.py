@@ -2,19 +2,15 @@
 Coverage plan generator for the Health Insurance AU simulation.
 """
 import random
-import logging
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 
 from health_insurance_au.config import HOSPITAL_TIERS, DEFAULT_WAITING_PERIODS
 from health_insurance_au.models.models import CoveragePlan
+from health_insurance_au.utils.logging_config import get_logger
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Define some sample plan names and details based on Bupa
 HOSPITAL_PLANS = [

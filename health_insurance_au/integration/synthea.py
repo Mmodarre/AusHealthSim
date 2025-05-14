@@ -2,7 +2,6 @@
 Synthea integration for the Health Insurance AU simulation.
 """
 import json
-import logging
 import os
 import random
 from datetime import datetime, date, timedelta
@@ -10,13 +9,10 @@ from typing import List, Dict, Any, Optional
 
 from health_insurance_au.utils.db_utils import execute_query, execute_non_query, bulk_insert
 from health_insurance_au.models.models import Member, Claim
+from health_insurance_au.utils.logging_config import get_logger
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class SyntheaIntegration:
     """
