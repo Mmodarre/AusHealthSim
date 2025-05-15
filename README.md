@@ -31,6 +31,7 @@ A realistic simulation of an Australian health insurance company's operational d
   - Synthea FHIR patient data integration
   - PyODBC database connectivity
   - Comprehensive test suite
+  - Cross-platform support (Linux, macOS, Windows)
 
 ## 🚀 Getting Started
 
@@ -38,7 +39,7 @@ A realistic simulation of an Australian health insurance company's operational d
 
 - Python 3.8+
 - SQL Server instance
-- ODBC Driver 17 for SQL Server
+- ODBC Driver 17+ for SQL Server
 - pyodbc package
 - Faker library (for dynamic data generation)
 
@@ -64,6 +65,7 @@ cp config/db_config.env.example config/db_config.env
 
 ### Initialize the Database
 
+#### On Linux/macOS:
 ```bash
 # Initialize the database schema
 ./bin/initialize_db.sh
@@ -72,14 +74,29 @@ cp config/db_config.env.example config/db_config.env
 ./bin/add_initial_data.sh
 ```
 
+#### On Windows:
+```batch
+# Initialize the database schema
+bin\initialize_db.bat
+
+# Add initial reference data
+bin\add_initial_data.bat
+```
+
 ## 🏃‍♂️ Running Simulations
 
 ### Quick Start
 
 Run a realistic simulation with dynamic data generation:
 
+#### On Linux/macOS:
 ```bash
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
+```
+
+#### On Windows:
+```batch
+bin\run_realistic_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
 ```
 
 ### Simulation Options
@@ -96,6 +113,7 @@ Run a realistic simulation with dynamic data generation:
 ### Data Generation
 
 The simulation generates data with realistic patterns:
+
 - Fewer members join on weekends
 - More claims at the beginning/end of the month
 - Business hours for transactions (8 AM to 5 PM)
@@ -104,12 +122,22 @@ The simulation generates data with realistic patterns:
 
 By default, the simulation uses dynamic data generation to create realistic patient profiles:
 
+#### On Linux/macOS:
 ```bash
 # Use dynamic data generation (default)
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31
 
 # Use static data from JSON file
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
+```
+
+#### On Windows:
+```batch
+# Use dynamic data generation (default)
+bin\run_realistic_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31
+
+# Use static data from JSON file
+bin\run_realistic_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
 ```
 
 ## 📊 Database Structure
@@ -149,9 +177,16 @@ This project uses SQL Server's Change Data Capture (CDC) feature to track change
 
 ### Enable CDC
 
+#### On Linux/macOS:
 ```bash
 # Enable CDC on the database and tables
 ./bin/enable_cdc.sh
+```
+
+#### On Windows:
+```batch
+# Enable CDC on the database and tables
+bin\enable_cdc.bat
 ```
 
 ### Monitor CDC Changes
@@ -165,12 +200,22 @@ This project uses SQL Server's Change Data Capture (CDC) feature to track change
 
 Run the test suite:
 
+#### On Linux/macOS:
 ```bash
 # Run all tests
 ./bin/run_tests.sh
 
 # Run tests with coverage report
 ./bin/run_tests.sh coverage
+```
+
+#### On Windows:
+```batch
+# Run all tests
+bin\run_tests.bat
+
+# Run tests with coverage report
+bin\run_tests.bat coverage
 ```
 
 ## 📚 Documentation
@@ -204,11 +249,12 @@ scripts/                      # Standalone scripts
 └── simulation/               # Simulation scripts
     └── realistic_simulation.py  # Realistic simulation script
 
-bin/                          # Shell scripts
-├── initialize_db.sh          # Database initialization
-├── add_initial_data.sh       # Add initial data
-├── run_realistic_simulation.sh  # Run realistic simulation
-└── enable_cdc.sh             # Enable CDC
+bin/                          # Scripts for running operations
+├── initialize_db.sh/.bat     # Database initialization
+├── add_initial_data.sh/.bat  # Add initial data
+├── run_realistic_simulation.sh/.bat  # Run realistic simulation
+├── enable_cdc.sh/.bat        # Enable CDC
+└── run_tests.sh/.bat         # Run tests
 
 config/                       # Configuration files
 docs/                         # Documentation

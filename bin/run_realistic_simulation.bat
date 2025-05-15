@@ -14,6 +14,7 @@ SET "END_DATE="
 SET "MEMBERS_PER_DAY=10"
 SET "LOG_LEVEL=INFO"
 SET "RESET_MEMBERS="
+SET "USE_STATIC_DATA="
 
 REM Parse command line arguments
 :parse_args
@@ -47,8 +48,12 @@ IF "%~1"=="--reset-members" (
     SET "RESET_MEMBERS=--reset-members"
     GOTO next_arg
 )
+IF "%~1"=="--use-static-data" (
+    SET "USE_STATIC_DATA=--use-static-data"
+    GOTO next_arg
+)
 ECHO Unknown option: %~1
-ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members]
+ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members] [--use-static-data]
 EXIT /B 1
 
 :next_arg
@@ -60,13 +65,13 @@ GOTO parse_args
 REM Validate required arguments
 IF "%START_DATE%"=="" (
     ECHO Error: start-date is required
-    ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members]
+    ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members] [--use-static-data]
     EXIT /B 1
 )
 
 IF "%END_DATE%"=="" (
     ECHO Error: end-date is required
-    ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members]
+    ECHO Usage: %0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members] [--use-static-data]
     EXIT /B 1
 )
 
@@ -98,6 +103,7 @@ python "%PROJECT_ROOT%\scripts\simulation\realistic_simulation.py" ^
     --end-date "%END_DATE%" ^
     --members-per-day "%MEMBERS_PER_DAY%" ^
     --log-level "%LOG_LEVEL%" ^
-    %RESET_MEMBERS%
+    %RESET_MEMBERS% ^
+    %USE_STATIC_DATA%
 
 ECHO Simulation completed!
