@@ -68,8 +68,10 @@ def generate_premium_payments(policies: List[Policy], simulation_date: date) -> 
             next_due_date = period_end_date
         
         # Create the payment
+        # Use the actual policy_id from the database if available, otherwise fall back to index
+        actual_policy_id = getattr(policy, 'policy_id', policies.index(policy) + 1)
         payment = PremiumPayment(
-            policy_id=policies.index(policy) + 1,  # Assuming PolicyID starts at 1
+            policy_id=actual_policy_id,
             payment_date=simulation_date,
             payment_amount=payment_amount,
             payment_method=payment_method,

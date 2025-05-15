@@ -122,6 +122,34 @@ class HealthInsuranceSimulation:
             except Exception as e:
                 logger.error(f"Error converting plan data to CoveragePlan object: {e}")
         
+        # Load policies
+        policies_data = execute_query("SELECT * FROM Insurance.Policies")
+        self.policies = []
+        for policy_data in policies_data:
+            try:
+                policy = Policy(
+                    policy_number=policy_data['PolicyNumber'],
+                    primary_member_id=policy_data['PrimaryMemberID'],
+                    plan_id=policy_data['PlanID'],
+                    coverage_type=policy_data['CoverageType'],
+                    start_date=policy_data['StartDate'] if isinstance(policy_data['StartDate'], date) else datetime.strptime(policy_data['StartDate'], '%Y-%m-%d').date() if policy_data['StartDate'] else date.today(),
+                    current_premium=float(policy_data['CurrentPremium']),
+                    premium_frequency=policy_data['PremiumFrequency'],
+                    excess_amount=float(policy_data['ExcessAmount']),
+                    rebate_percentage=float(policy_data['RebatePercentage']),
+                    lhc_loading_percentage=float(policy_data['LHCLoadingPercentage']),
+                    status=policy_data['Status'],
+                    payment_method=policy_data['PaymentMethod'],
+                    end_date=policy_data['EndDate'] if isinstance(policy_data['EndDate'], date) else datetime.strptime(policy_data['EndDate'], '%Y-%m-%d').date() if policy_data['EndDate'] else None,
+                    last_premium_paid_date=policy_data['LastPremiumPaidDate'] if isinstance(policy_data['LastPremiumPaidDate'], date) else datetime.strptime(policy_data['LastPremiumPaidDate'], '%Y-%m-%d').date() if policy_data['LastPremiumPaidDate'] else None,
+                    next_premium_due_date=policy_data['NextPremiumDueDate'] if isinstance(policy_data['NextPremiumDueDate'], date) else datetime.strptime(policy_data['NextPremiumDueDate'], '%Y-%m-%d').date() if policy_data['NextPremiumDueDate'] else None
+                )
+                # Store the actual database policy_id for correct reference in premium payments
+                setattr(policy, 'policy_id', policy_data['PolicyID'])
+                self.policies.append(policy)
+            except Exception as e:
+                logger.error(f"Error converting policy data to Policy object: {e}")
+        
         # Load providers
         providers_data = execute_query("SELECT * FROM Insurance.Providers")
         self.providers = []
@@ -148,7 +176,7 @@ class HealthInsuranceSimulation:
             except Exception as e:
                 logger.error(f"Error converting provider data to Provider object: {e}")
         
-        logger.info(f"Loaded {len(self.members)} members, {len(self.coverage_plans)} coverage plans, and {len(self.providers)} providers from database")
+        logger.info(f"Loaded {len(self.members)} members, {len(self.coverage_plans)} coverage plans, {len(self.policies)} policies, and {len(self.providers)} providers from database")
     
     def add_members(self, count: int = 10, simulation_date: Optional[date] = None, use_dynamic_data: bool = True):
         """
@@ -504,12 +532,12 @@ class HealthInsuranceSimulation:
                         query = """
                         UPDATE Insurance.Policies
                         SET LastPremiumPaidDate = ?, NextPremiumDueDate = ?, LastModified = GETDATE()
-                        WHERE PolicyNumber = ?
+                        WHERE PolicyID = ?
                         """
                         execute_non_query(query, (
                             policy.last_premium_paid_date, 
                             policy.next_premium_due_date, 
-                            policy.policy_number
+                            getattr(policy, 'policy_id', 0)
                         ), simulation_date)
                     except Exception as e:
                         logger.error(f"Error updating policy {policy.policy_number} payment dates: {e}")

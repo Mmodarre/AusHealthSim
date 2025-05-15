@@ -41,6 +41,33 @@ def get_connection():
         if conn:
             conn.close()
 
+def get_qualified_table_name(table_name: str) -> str:
+    """
+    Get the fully qualified table name including database name.
+    
+    Args:
+        table_name: The table name, which may or may not include schema
+        
+    Returns:
+        The fully qualified table name
+    """
+    # If the table name already includes a database name (contains a dot before the first dot),
+    # extract just the table part (after the first dot)
+    if '.' in table_name:
+        # Check if the table name already starts with the database name
+        if table_name.startswith(f"{DB_CONFIG['database']}."):
+            return table_name
+        
+        # Check if there's already a database name (contains two dots)
+        parts = table_name.split('.')
+        if len(parts) > 2:
+            # Extract just the schema and table parts
+            schema_table = '.'.join(parts[-2:])
+            return f"{DB_CONFIG['database']}.{schema_table}"
+    
+    # Add the database name to the table name
+    return f"{DB_CONFIG['database']}.{table_name}"
+
 def execute_query(query: str, params: Optional[Tuple] = None) -> List[Dict[str, Any]]:
     """
     Execute a SQL query and return the results as a list of dictionaries.
@@ -196,6 +223,9 @@ def bulk_insert(table_name: str, data: List[Dict[str, Any]], simulation_date: Op
         with get_connection() as conn:
             cursor = conn.cursor()
             
+            # Get the fully qualified table name
+            qualified_table_name = get_qualified_table_name(table_name)
+            
             # Get column names from the first dictionary
             columns = list(data[0].keys())
             
@@ -228,7 +258,7 @@ def bulk_insert(table_name: str, data: List[Dict[str, Any]], simulation_date: Op
             placeholders = ", ".join(["?" for _ in columns])
             
             # Create the INSERT statement
-            insert_sql = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders})"
+            insert_sql = f"INSERT INTO {qualified_table_name} ({columns_str}) VALUES ({placeholders})"
             
             # Insert rows in batches
             rows_inserted = 0
