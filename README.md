@@ -12,6 +12,7 @@ This project simulates an Australian health insurance company's operational data
   - Premium payments
   - Provider management
 - Generates realistic Australian health insurance data
+- Dynamic patient data generation with realistic demographics
 - Supports integration with Synthea synthetic patient data
 - Uses SQL Server Change Data Capture (CDC) for change tracking
 - Configurable simulation parameters
@@ -29,6 +30,9 @@ The project is organized into the following directories:
   - `models/` - Data models
   - `simulation/` - Simulation modules
   - `utils/` - Utility functions
+    - `data_generation/` - Dynamic patient data generation
+    - `data_loader.py` - Load data from static files
+    - `dynamic_data_generator.py` - Generate data dynamically
 - `scripts/` - Standalone Python scripts
   - `db/` - Database-related scripts
   - `simulation/` - Simulation-related scripts
@@ -50,6 +54,7 @@ Detailed documentation is available in the `docs/` directory:
 - [Database Configuration](docs/database_configuration.md) - Setting up and configuring database connections
 - [Change Data Capture](docs/change_data_capture.md) - Working with CDC for change tracking
 - [Synthea Integration](docs/synthea_integration.md) - Integrating with Synthea synthetic patient data
+- [Dynamic Data Generation](docs/dynamic_data_generation.md) - Generating realistic patient data dynamically
 
 ## Getting Started
 
@@ -59,6 +64,7 @@ Detailed documentation is available in the `docs/` directory:
 - SQL Server instance
 - ODBC Driver 17 for SQL Server
 - pyodbc package
+- Faker library (for dynamic data generation)
 
 ### Installation
 
@@ -147,6 +153,20 @@ Alternatively, you can use the shell scripts in the `bin/` directory:
 ./bin/run_complete_simulation.sh
 ```
 
+### Running a Realistic Simulation
+
+To run a realistic simulation with dynamic data generation:
+
+```bash
+# Run a simulation from January 1, 2023 to January 31, 2023 with 10 new members per day
+./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
+
+# Use static data from JSON file instead of dynamic generation
+./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
+```
+
+The simulation will generate realistic data with daily patterns (fewer members on weekends, more claims at the beginning/end of month, etc.).
+
 ## Database Structure
 
 The database is organized into the following schemas:
@@ -174,6 +194,28 @@ The simulation can be customized with various parameters. See `config/simulation
 
 ```bash
 hi-simulation --help
+```
+
+### Dynamic Data Generation
+
+The simulation can generate patient data dynamically using the Faker library, which creates realistic demographics with:
+
+- Age distributions matching population demographics
+- Realistic names, addresses, and contact information
+- Life stages with address and name changes over time
+- Variants to simulate data entry errors or name changes
+- Australian state and postcode information
+
+To use dynamic data generation (default behavior):
+
+```bash
+./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31
+```
+
+To use static data from the JSON file instead:
+
+```bash
+./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
 ```
 
 ## Australian Health Insurance Specifics

@@ -1,5 +1,4 @@
 # No external Python packages required
-# No external Python packages required
 # The application uses sqlcmd and bcp command-line utilities instead of pyodbc
 
 # If you want to use Python for SQL Server interaction, uncomment the following:
@@ -10,3 +9,7 @@ pyodbc>=4.0.30
 
 # For command-line argument parsing (optional)
 click>=8.0.0
+
+# For dynamic data generation
+faker>=18.10.0
+numpy>=1.24.0

@@ -15,6 +15,7 @@ END_DATE=""
 MEMBERS_PER_DAY=10
 LOG_LEVEL="INFO"
 RESET_MEMBERS=""
+USE_STATIC_DATA=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -49,9 +50,13 @@ while [[ $# -gt 0 ]]; do
             RESET_MEMBERS="--reset-members"
             shift
             ;;
+        --use-static-data)
+            USE_STATIC_DATA="--use-static-data"
+            shift
+            ;;
         *)
             echo "Unknown option: $key"
-            echo "Usage: $0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members]"
+            echo "Usage: $0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members] [--use-static-data]"
             exit 1
             ;;
     esac
@@ -60,7 +65,7 @@ done
 # Validate required arguments
 if [ -z "$START_DATE" ] || [ -z "$END_DATE" ]; then
     echo "Error: start-date and end-date are required"
-    echo "Usage: $0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE]"
+    echo "Usage: $0 --start-date YYYY-MM-DD --end-date YYYY-MM-DD [--members-per-day N] [--log-level LEVEL] [--env-file FILE] [--reset-members] [--use-static-data]"
     exit 1
 fi
 
@@ -82,6 +87,7 @@ python3 "$PROJECT_ROOT/scripts/simulation/realistic_simulation.py" \
     --end-date "$END_DATE" \
     --members-per-day "$MEMBERS_PER_DAY" \
     --log-level "$LOG_LEVEL" \
-    $RESET_MEMBERS
+    $RESET_MEMBERS \
+    $USE_STATIC_DATA
 
 echo "Simulation completed!"

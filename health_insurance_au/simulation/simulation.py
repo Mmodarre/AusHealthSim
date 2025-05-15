@@ -11,6 +11,7 @@ from health_insurance_au.utils.db_utils import (
     execute_stored_procedure, bulk_insert
 )
 from health_insurance_au.utils.data_loader import load_sample_data, convert_to_members
+from health_insurance_au.utils.dynamic_data_generator import generate_dynamic_data, convert_to_members as convert_dynamic_to_members
 from health_insurance_au.simulation.coverage_plans import generate_coverage_plans
 from health_insurance_au.simulation.providers import generate_providers
 from health_insurance_au.simulation.policies import generate_policies
@@ -149,26 +150,39 @@ class HealthInsuranceSimulation:
         
         logger.info(f"Loaded {len(self.members)} members, {len(self.coverage_plans)} coverage plans, and {len(self.providers)} providers from database")
     
-    def add_members(self, count: int = 10, simulation_date: Optional[date] = None):
+    def add_members(self, count: int = 10, simulation_date: Optional[date] = None, use_dynamic_data: bool = True):
         """
         Add new members to the database.
         
         Args:
             count: Number of members to add
             simulation_date: The date to use for LastModified
+            use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
         """
         logger.info(f"Adding {count} new members...")
         
-        # Load sample data
-        sample_data = load_sample_data()
-        if not sample_data:
-            logger.error("Failed to load sample data")
-            return
-        
-        # Convert to Member objects
-        new_members = convert_to_members(sample_data, count)
+        new_members = []
+        if use_dynamic_data:
+            # Generate dynamic data
+            dynamic_data = generate_dynamic_data(count)
+            if not dynamic_data:
+                logger.error("Failed to generate dynamic data")
+                return
+                
+            # Convert to Member objects
+            new_members = convert_dynamic_to_members(dynamic_data, count)
+        else:
+            # Load sample data from static JSON file
+            sample_data = load_sample_data()
+            if not sample_data:
+                logger.error("Failed to load sample data")
+                return
+            
+            # Convert to Member objects
+            new_members = convert_to_members(sample_data, count)
+            
         if not new_members:
-            logger.error("Failed to convert sample data to Member objects")
+            logger.error("Failed to convert data to Member objects")
             return
         
         # Insert into database
@@ -579,6 +593,7 @@ class HealthInsuranceSimulation:
         simulation_date: date = None,
         add_new_members: bool = True,
         new_members_count: int = 5,
+        use_dynamic_data: bool = True,
         add_new_plans: bool = False,
         new_plans_count: int = 0,
         add_new_providers: bool = True,
@@ -608,6 +623,7 @@ class HealthInsuranceSimulation:
             simulation_date: The date to simulate (default: today)
             add_new_members: Whether to add new members
             new_members_count: Number of new members to add
+            use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
             add_new_plans: Whether to add new coverage plans
             new_plans_count: Number of new plans to add
             add_new_providers: Whether to add new providers
@@ -640,7 +656,7 @@ class HealthInsuranceSimulation:
         
         # Add new members if requested
         if add_new_members:
-            self.add_members(new_members_count, simulation_date)
+            self.add_members(new_members_count, simulation_date, use_dynamic_data)
         
         # Add new coverage plans if requested
         if add_new_plans:
@@ -694,7 +710,8 @@ class HealthInsuranceSimulation:
         self,
         start_date: date,
         end_date: date = None,
-        frequency: str = 'daily'
+        frequency: str = 'daily',
+        use_dynamic_data: bool = True
     ):
         """
         Run a historical simulation from start_date to end_date.
@@ -703,6 +720,7 @@ class HealthInsuranceSimulation:
             start_date: The start date for the simulation
             end_date: The end date for the simulation (default: today)
             frequency: The frequency of simulation runs ('daily', 'weekly', 'monthly')
+            use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
         """
         if end_date is None:
             end_date = date.today()
@@ -741,6 +759,7 @@ class HealthInsuranceSimulation:
                 simulation_date=current_date,
                 add_new_members=random.random() < 0.7,  # 70% chance of adding new members
                 new_members_count=random.randint(1, 10),
+                use_dynamic_data=use_dynamic_data,
                 add_new_plans=random.random() < 0.05,  # 5% chance of adding new plans
                 new_plans_count=random.randint(1, 3) if random.random() < 0.05 else 0,
                 create_new_policies=random.random() < 0.8,  # 80% chance of creating new policies

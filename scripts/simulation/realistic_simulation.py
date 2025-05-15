@@ -122,7 +122,7 @@ def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
     
     return params
 
-def run_realistic_simulation(start_date: date, end_date: date, base_members_per_day: int, log_level: str = 'INFO'):
+def run_realistic_simulation(start_date: date, end_date: date, base_members_per_day: int, use_dynamic_data: bool = True, log_level: str = 'INFO'):
     """
     Run a realistic health insurance simulation between the specified dates.
     
@@ -130,6 +130,7 @@ def run_realistic_simulation(start_date: date, end_date: date, base_members_per_
         start_date: Start date for the simulation
         end_date: End date for the simulation
         base_members_per_day: Base number of new members per day
+        use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
         log_level: Logging level
     """
     # Configure logging
@@ -169,6 +170,7 @@ def run_realistic_simulation(start_date: date, end_date: date, base_members_per_
             simulation_date=current_date,
             add_new_members=params["add_new_members"],
             new_members_count=params["new_members_count"],
+            use_dynamic_data=use_dynamic_data,
             add_new_plans=params["add_new_plans"],
             new_plans_count=params["new_plans_count"],
             add_new_providers=params["add_new_providers"],
@@ -206,6 +208,7 @@ def main():
     parser.add_argument('--members-per-day', type=int, default=10, help='Base number of new members per day')
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], default='INFO', help='Set the logging level')
     parser.add_argument('--reset-members', action='store_true', help='Reset the list of used member IDs before running')
+    parser.add_argument('--use-static-data', action='store_true', help='Use static data from JSON file instead of dynamically generated data')
     
     args = parser.parse_args()
     
@@ -224,6 +227,7 @@ def main():
         start_date=args.start_date,
         end_date=args.end_date,
         base_members_per_day=args.members_per_day,
+        use_dynamic_data=not args.use_static_data,
         log_level=args.log_level
     )
 
