@@ -278,6 +278,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Project Maintainer - [your.email@example.com](mailto:your.email@example.com)
+Project Maintainer - Mehdi Modarressi
 
-Project Link: [https://github.com/yourusername/health-insurance-au](https://github.com/yourusername/health-insurance-au)
+Project Link: [https://github.com/Mmodarre/AusHealthSim](https://github.com/Mmodarre/AusHealthSim)
