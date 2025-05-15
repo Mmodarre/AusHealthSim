@@ -6,7 +6,6 @@
 
 A realistic simulation of an Australian health insurance company's operational database, designed as a source for data warehouse demonstrations and testing. This project generates time-series data with daily changes that can be tracked using SQL Server's Change Data Capture (CDC).
 
-
 ## 📋 Features
 
 - **Core Insurance Operations**
