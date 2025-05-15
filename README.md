@@ -1,62 +1,39 @@
 # Australian Health Insurance Simulation
 
-This project simulates an Australian health insurance company's operational database, designed to be used as a source for data warehouse demonstrations. The simulation generates realistic data with daily changes that can be tracked over time.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-2019-red.svg)](https://www.microsoft.com/en-us/sql-server/sql-server-2019)
 
-## Features
+A realistic simulation of an Australian health insurance company's operational database, designed as a source for data warehouse demonstrations and testing. This project generates time-series data with daily changes that can be tracked using SQL Server's Change Data Capture (CDC).
 
-- Simulates core health insurance operations including:
-  - Member management
-  - Policy creation and updates
-  - Coverage plan management
-  - Claims processing
-  - Premium payments
-  - Provider management
-- Generates realistic Australian health insurance data
-- Dynamic patient data generation with realistic demographics
-- Supports integration with Synthea synthetic patient data
-- Uses SQL Server Change Data Capture (CDC) for change tracking
-- Configurable simulation parameters
 
-## Project Structure
+## 📋 Features
 
-The project is organized into the following directories:
+- **Core Insurance Operations**
+  - Member management and demographics
+  - Policy creation and lifecycle management
+  - Coverage plan configuration
+  - Claims processing and assessment
+  - Premium payment tracking
+  - Provider network management
+- **Data Generation**
+  - Dynamic patient data generation with realistic demographics
+  - Age distributions matching population demographics
+  - Life stages with address and name changes over time
+  - Data variants to simulate errors and changes
+- **Australian-Specific Elements**
+  - Hospital cover tiers (Basic, Bronze, Silver, Gold)
+  - Private Health Insurance (PHI) rebate tiers
+  - Lifetime Health Cover (LHC) loading
+  - Medicare Benefits Schedule (MBS) integration
+  - Australian states and postcodes
+- **Technical Features**
+  - SQL Server Change Data Capture (CDC) for tracking changes
+  - Synthea FHIR patient data integration
+  - PyODBC database connectivity
+  - Comprehensive test suite
 
-- `health_insurance_au/` - Main Python package
-  - `api/` - API endpoints (if needed)
-  - `cli/` - Command-line interfaces
-  - `core/` - Core business logic and constants
-  - `db/` - Database-specific code
-  - `integration/` - Integration with external systems
-  - `models/` - Data models
-  - `simulation/` - Simulation modules
-  - `utils/` - Utility functions
-    - `data_generation/` - Dynamic patient data generation
-    - `data_loader.py` - Load data from static files
-    - `dynamic_data_generator.py` - Generate data dynamically
-- `scripts/` - Standalone Python scripts
-  - `db/` - Database-related scripts
-  - `simulation/` - Simulation-related scripts
-  - `utils/` - Utility scripts
-- `bin/` - Shell scripts for running operations
-- `config/` - Configuration files
-- `data/` - Data files
-- `docs/` - Documentation
-- `logs/` - Log files
-- `reports/` - Generated reports
-- `tests/` - Test suite
-  - `unit/` - Unit tests
-  - `integration/` - Integration tests
-
-## Documentation
-
-Detailed documentation is available in the `docs/` directory:
-
-- [Database Configuration](docs/database_configuration.md) - Setting up and configuring database connections
-- [Change Data Capture](docs/change_data_capture.md) - Working with CDC for change tracking
-- [Synthea Integration](docs/synthea_integration.md) - Integrating with Synthea synthetic patient data
-- [Dynamic Data Generation](docs/dynamic_data_generation.md) - Generating realistic patient data dynamically
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -68,200 +45,126 @@ Detailed documentation is available in the `docs/` directory:
 
 ### Installation
 
-#### Using pip
-
 ```bash
-# Install from the current directory
+# Clone the repository
+git clone https://github.com/yourusername/health-insurance-au.git
+cd health-insurance-au
+
+# Install dependencies
 pip install -e .
 ```
 
-#### Manual Setup
-
-1. Clone this repository
-2. Set up your database configuration (see below)
-3. Run the initialization script:
-   ```bash
-   ./bin/initialize_db.sh
-   ```
-4. Add initial data:
-   ```bash
-   ./bin/add_initial_data.sh
-   ```
-
 ### Database Configuration
 
-The project uses multiple methods for configuring database connections, with the following order of precedence:
-
-1. Command-line arguments (highest precedence)
-2. Environment variables
-3. Configuration file (`config/db_config.env`)
-4. Default values (lowest precedence)
-
-#### Using a Configuration File
-
-Copy the example configuration file and edit it with your database credentials:
+Create a configuration file with your database credentials:
 
 ```bash
 cp config/db_config.env.example config/db_config.env
 # Edit config/db_config.env with your database credentials
 ```
 
-#### Using Environment Variables
-
-You can set the following environment variables:
+### Initialize the Database
 
 ```bash
-export DB_SERVER=your_server_address
-export DB_DATABASE=your_database_name
-export DB_USERNAME=your_username
-export DB_PASSWORD=your_password
-export DB_DRIVER="{ODBC Driver 17 for SQL Server}"
-```
-
-## Usage
-
-### Command-Line Tools
-
-After installation, you can use the following command-line tools:
-
-```bash
-# Initialize the database
-hi-init-db
-
-# Add initial data
-hi-add-data
-
-# Enable CDC
-hi-enable-cdc
-
-# Run a simulation
-hi-simulation
-```
-
-### Shell Scripts
-
-Alternatively, you can use the shell scripts in the `bin/` directory:
-
-```bash
-# Initialize the database
+# Initialize the database schema
 ./bin/initialize_db.sh
 
-# Add initial data
+# Add initial reference data
 ./bin/add_initial_data.sh
-
-# Run a complete simulation
-./bin/run_complete_simulation.sh
 ```
 
-### Running a Realistic Simulation
+## 🏃‍♂️ Running Simulations
 
-To run a realistic simulation with dynamic data generation:
+### Quick Start
+
+Run a realistic simulation with dynamic data generation:
 
 ```bash
-# Run a simulation from January 1, 2023 to January 31, 2023 with 10 new members per day
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
+```
 
-# Use static data from JSON file instead of dynamic generation
+### Simulation Options
+
+| Option | Description |
+|--------|-------------|
+| `--start-date` | Start date for the simulation (YYYY-MM-DD) |
+| `--end-date` | End date for the simulation (YYYY-MM-DD) |
+| `--members-per-day` | Base number of new members per day |
+| `--log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `--reset-members` | Reset the list of used member IDs |
+| `--use-static-data` | Use static data from JSON file instead of dynamic generation |
+
+### Data Generation
+
+The simulation generates data with realistic patterns:
+- Fewer members join on weekends
+- More claims at the beginning/end of the month
+- Business hours for transactions (8 AM to 5 PM)
+
+#### Dynamic vs Static Data
+
+By default, the simulation uses dynamic data generation to create realistic patient profiles:
+
+```bash
+# Use dynamic data generation (default)
+./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31
+
+# Use static data from JSON file
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
 ```
 
-The simulation will generate realistic data with daily patterns (fewer members on weekends, more claims at the beginning/end of month, etc.).
-
-## Database Structure
+## 📊 Database Structure
 
 The database is organized into the following schemas:
 
-- **Insurance**: Core operational tables
-  - Members
-  - CoveragePlans
-  - Policies
-  - PolicyMembers
-  - Claims
-  - Providers
-  - PremiumPayments
-- **Regulatory**: Australian health insurance regulations
-  - PHIRebateTiers
-  - MBSItems
-- **Simulation**: Stored procedures for data simulation
-- **Integration**: Tables for Synthea FHIR data integration
-  - SyntheaPatients
-  - SyntheaEncounters
-  - SyntheaProcedures
+### Insurance Schema
 
-## Simulation Parameters
+Core operational tables for the insurance business:
 
-The simulation can be customized with various parameters. See `config/simulation.conf` for available options, or run:
+- **Members** - Personal information, contact details, Medicare numbers
+- **CoveragePlans** - Plan details, benefits, premiums, waiting periods
+- **Policies** - Policy details, status, coverage type, excess amounts
+- **PolicyMembers** - Relationship between policies and members
+- **Claims** - Claim details, status, payment information
+- **Providers** - Provider information, specialties, agreement status
+- **PremiumPayments** - Payment tracking, due dates, payment status
 
-```bash
-hi-simulation --help
-```
+### Regulatory Schema
 
-### Dynamic Data Generation
+Tables related to Australian health insurance regulations:
 
-The simulation can generate patient data dynamically using the Faker library, which creates realistic demographics with:
+- **PHIRebateTiers** - Private Health Insurance rebate tiers and rates
+- **MBSItems** - Medicare Benefits Schedule items and rebates
 
-- Age distributions matching population demographics
-- Realistic names, addresses, and contact information
-- Life stages with address and name changes over time
-- Variants to simulate data entry errors or name changes
-- Australian state and postcode information
+### Integration Schema
 
-To use dynamic data generation (default behavior):
+Tables for Synthea FHIR data integration:
+
+- **SyntheaPatients** - Patient data from Synthea
+- **SyntheaEncounters** - Encounter data from Synthea
+- **SyntheaProcedures** - Procedure data from Synthea
+
+## 📈 Change Data Capture (CDC)
+
+This project uses SQL Server's Change Data Capture (CDC) feature to track changes to the data over time.
+
+### Enable CDC
 
 ```bash
-./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31
-```
-
-To use static data from the JSON file instead:
-
-```bash
-./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --use-static-data
-```
-
-## Australian Health Insurance Specifics
-
-The simulation includes Australian-specific health insurance features:
-
-- Hospital cover tiers (Basic, Bronze, Silver, Gold)
-- Private Health Insurance (PHI) rebate tiers
-- Lifetime Health Cover (LHC) loading
-- Medicare Benefits Schedule (MBS) items
-- Australian states and postcodes
-- Waiting periods for pre-existing conditions
-
-## Change Data Capture (CDC)
-
-This project uses SQL Server's Change Data Capture (CDC) feature to track changes to the data.
-
-### CDC Setup
-
-To enable CDC on the database:
-
-```bash
-hi-enable-cdc
-```
-
-or use the shell script:
-
-```bash
+# Enable CDC on the database and tables
 ./bin/enable_cdc.sh
 ```
 
-### Monitoring CDC Changes
-
-To monitor CDC changes:
+### Monitor CDC Changes
 
 ```bash
-hi-monitor-cdc --schema Insurance --table Members --hours 24
+# Monitor changes to a specific table for the last 24 hours
+./bin/monitor_cdc.sh --schema Insurance --table Members --hours 24
 ```
 
-## Testing
+## 🧪 Testing
 
-The project includes a comprehensive test suite to ensure code quality and reliability.
-
-### Running Tests
-
-To run the tests, use the provided script:
+Run the test suite:
 
 ```bash
 # Run all tests
@@ -271,20 +174,65 @@ To run the tests, use the provided script:
 ./bin/run_tests.sh coverage
 ```
 
-Or use pytest directly:
+## 📚 Documentation
 
-```bash
-# Run all tests
-pytest
+Detailed documentation is available in the `docs/` directory:
 
-# Run with coverage
-pytest --cov=health_insurance_au
+- [Database Configuration](docs/database_configuration.md)
+- [Change Data Capture](docs/change_data_capture.md)
+- [Synthea Integration](docs/synthea_integration.md)
+- [Dynamic Data Generation](docs/dynamic_data_generation.md)
+
+## 📁 Project Structure
+
+```
+health_insurance_au/          # Main Python package
+├── api/                      # API endpoints
+├── cli/                      # Command-line interfaces
+├── models/                   # Data models
+├── simulation/               # Simulation modules
+│   └── simulation.py         # Core simulation logic
+├── utils/                    # Utility functions
+│   ├── data_generation/      # Dynamic patient data generation
+│   │   └── generate_data.py  # Core data generation script
+│   ├── data_loader.py        # Load data from static files
+│   └── dynamic_data_generator.py  # Dynamic data integration
+├── integration/              # External system integration
+└── config.py                 # Configuration settings
+
+scripts/                      # Standalone scripts
+├── db/                       # Database scripts
+└── simulation/               # Simulation scripts
+    └── realistic_simulation.py  # Realistic simulation script
+
+bin/                          # Shell scripts
+├── initialize_db.sh          # Database initialization
+├── add_initial_data.sh       # Add initial data
+├── run_realistic_simulation.sh  # Run realistic simulation
+└── enable_cdc.sh             # Enable CDC
+
+config/                       # Configuration files
+docs/                         # Documentation
+data/                         # Data files
+tests/                        # Test suite
 ```
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+Project Maintainer - [your.email@example.com](mailto:your.email@example.com)
+
+Project Link: [https://github.com/yourusername/health-insurance-au](https://github.com/yourusername/health-insurance-au)
