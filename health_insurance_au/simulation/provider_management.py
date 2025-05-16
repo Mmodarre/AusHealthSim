@@ -50,10 +50,10 @@ def end_provider_agreements(percentage: float = 5.0, simulation_date: Optional[d
         try:
             query = """
             UPDATE Insurance.Providers
-            SET AgreementEndDate = ?, LastModified = GETDATE()
+            SET AgreementEndDate = ?, LastModified = ?
             WHERE ProviderNumber = ?
             """
-            execute_non_query(query, (end_date, provider['ProviderNumber']), simulation_date)
+            execute_non_query(query, (end_date, simulation_date, provider['ProviderNumber']), simulation_date)
             updated_count += 1
         except Exception as e:
             logger.error(f"Error updating provider agreement {provider['ProviderNumber']}: {e}")
@@ -134,7 +134,7 @@ def update_provider_details(percentage: float = 10.0, simulation_date: Optional[
             query = """
             UPDATE Insurance.Providers
             SET Phone = ?, Email = ?, AddressLine1 = ?, City = ?, State = ?, PostCode = ?,
-                IsPreferredProvider = ?, AgreementStartDate = ?, AgreementEndDate = ?, LastModified = GETDATE()
+                IsPreferredProvider = ?, AgreementStartDate = ?, AgreementEndDate = ?, LastModified = ?
             WHERE ProviderNumber = ?
             """
             execute_non_query(query, (
@@ -146,7 +146,8 @@ def update_provider_details(percentage: float = 10.0, simulation_date: Optional[
                 post_code, 
                 1 if is_preferred_provider else 0, 
                 agreement_start_date, 
-                agreement_end_date, 
+                agreement_end_date,
+                simulation_date,
                 provider['ProviderNumber']
             ), simulation_date)
             updated_count += 1

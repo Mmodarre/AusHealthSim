@@ -125,10 +125,7 @@ def execute_non_query(query: str, params: Optional[Tuple] = None, simulation_dat
         The number of affected rows
     """
     try:
-        # If simulation_date is provided and the query contains GETDATE(), replace it
-        if simulation_date and 'GETDATE()' in query:
-            formatted_date = simulation_date.strftime("'%Y-%m-%d'")
-            query = query.replace('GETDATE()', f"CAST({formatted_date} AS DATETIME)")
+        # Note: We no longer replace GETDATE() in the query since we're explicitly passing the date as a parameter
         
         with get_connection() as conn:
             cursor = conn.cursor()

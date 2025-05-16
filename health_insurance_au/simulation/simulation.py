@@ -359,10 +359,10 @@ class HealthInsuranceSimulation:
             try:
                 query = """
                 UPDATE Insurance.Members
-                SET Email = ?, MobilePhone = ?, AddressLine1 = ?, LastModified = GETDATE()
+                SET Email = ?, MobilePhone = ?, AddressLine1 = ?, LastModified = ?
                 WHERE MemberNumber = ?
                 """
-                execute_non_query(query, (member.email, member.mobile_phone, member.address_line1, member.member_number), simulation_date)
+                execute_non_query(query, (member.email, member.mobile_phone, member.address_line1, simulation_date, member.member_number), simulation_date)
             except Exception as e:
                 logger.error(f"Error updating member {member.member_number}: {e}")
         
@@ -415,7 +415,7 @@ class HealthInsuranceSimulation:
                 query = """
                 UPDATE Insurance.Policies
                 SET PlanID = ?, CoverageType = ?, ExcessAmount = ?, Status = ?, 
-                    PaymentMethod = ?, CurrentPremium = ?, LastModified = GETDATE()
+                    PaymentMethod = ?, CurrentPremium = ?, LastModified = ?
                 WHERE PolicyNumber = ?
                 """
                 execute_non_query(query, (
@@ -424,7 +424,8 @@ class HealthInsuranceSimulation:
                     policy.excess_amount, 
                     policy.status, 
                     policy.payment_method, 
-                    policy.current_premium, 
+                    policy.current_premium,
+                    simulation_date,
                     policy.policy_number
                 ), simulation_date)
             except Exception as e:
@@ -537,12 +538,13 @@ class HealthInsuranceSimulation:
                 try:
                     query = """
                     UPDATE Insurance.Policies
-                    SET LastPremiumPaidDate = ?, NextPremiumDueDate = ?, LastModified = GETDATE()
+                    SET LastPremiumPaidDate = ?, NextPremiumDueDate = ?, LastModified = ?
                     WHERE PolicyID = ?
                     """
                     execute_non_query(query, (
                         policy.last_premium_paid_date, 
-                        policy.next_premium_due_date, 
+                        policy.next_premium_due_date,
+                        simulation_date,
                         getattr(policy, 'policy_id', 0)
                     ), simulation_date)
                 except Exception as e:
@@ -607,14 +609,15 @@ class HealthInsuranceSimulation:
             try:
                 query = """
                 UPDATE Insurance.Claims
-                SET Status = ?, ProcessedDate = ?, PaymentDate = ?, RejectionReason = ?, LastModified = GETDATE()
+                SET Status = ?, ProcessedDate = ?, PaymentDate = ?, RejectionReason = ?, LastModified = ?
                 WHERE ClaimNumber = ?
                 """
                 execute_non_query(query, (
                     new_status, 
                     processed_date, 
                     payment_date, 
-                    rejection_reason, 
+                    rejection_reason,
+                    simulation_date,
                     claim['ClaimNumber']
                 ), simulation_date)
             except Exception as e:
