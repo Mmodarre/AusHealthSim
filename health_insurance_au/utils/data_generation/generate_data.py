@@ -100,19 +100,27 @@ def generate_birthdate(age):
     return birth_date.strftime("%Y-%m-%d")
 
 def generate_address():
-    """Generate a realistic address."""
+    """Generate a realistic address with length constraints."""
     state_code = random.choice(list(STATES.keys()))
+    street_address = fake.street_address()
+    # Ensure the street address isn't too long (max 100 chars)
+    if len(street_address) > 100:
+        street_address = street_address[:100]
+    
     return {
-        "line": [fake.street_address()],
-        "city": fake.city(),
+        "line": [street_address],
+        "city": fake.city()[:50],  # Ensure city isn't too long
         "state": state_code,
-        "zip": fake.postcode()
+        "zip": fake.postcode()[:10]  # Ensure postcode isn't too long
     }
 
 def generate_telecom():
-    """Generate telecommunication details."""
+    """Generate telecommunication details with Australian format phone numbers."""
+    # Generate Australian mobile number format (04XX XXX XXX)
+    mobile = f"04{random.randint(10, 99)} {random.randint(100, 999)} {random.randint(100, 999)}"
+    
     return {
-        "phone": fake.phone_number(),
+        "phone": mobile,
         "email": fake.email()
     }
 
@@ -187,7 +195,7 @@ def create_address_variant(address):
         }
         for full, abbr in replacements.items():
             line = line.replace(f" {full}", f" {abbr}")
-        variant_address['line'] = [line]
+        variant_address['line'] = [line[:100]]  # Ensure it's not too long
     
     elif variant_type == 'typo':
         # Simple typo in street name
@@ -202,7 +210,7 @@ def create_address_variant(address):
                 chars = list(word)
                 chars[char_idx], chars[char_idx+1] = chars[char_idx+1], chars[char_idx]
                 words[word_idx] = ''.join(chars)
-                variant_address['line'] = [' '.join(words)]
+                variant_address['line'] = [' '.join(words)[:100]]  # Ensure it's not too long
     
     else:  # format
         # Change format (e.g., add/remove apartment number)
@@ -213,10 +221,11 @@ def create_address_variant(address):
             if len(parts) == 1:
                 parts = line.split(' Unit ')
             if len(parts) > 1:
-                variant_address['line'] = [parts[0]]
+                variant_address['line'] = [parts[0][:100]]  # Ensure it's not too long
         else:
             # Add apartment/unit
-            variant_address['line'] = [f"{line} Apt {random.randint(1, 999)}"]
+            new_line = f"{line} Apt {random.randint(1, 999)}"
+            variant_address['line'] = [new_line[:100]]  # Ensure it's not too long
     
     return variant_address
 
