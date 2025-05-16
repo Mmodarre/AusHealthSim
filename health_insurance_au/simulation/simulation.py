@@ -527,6 +527,10 @@ class HealthInsuranceSimulation:
         # Insert into database
         payment_dicts = [payment.to_dict() for payment in new_payments]
         try:
+            # Ensure LastModified is set to simulation_date for premium payments
+            for payment_dict in payment_dicts:
+                payment_dict['LastModified'] = simulation_date
+                
             rows_affected = bulk_insert("Insurance.PremiumPayments", payment_dicts, simulation_date)
             logger.info(f"Added {rows_affected} new premium payments to the database")
             
@@ -544,9 +548,9 @@ class HealthInsuranceSimulation:
                     execute_non_query(query, (
                         policy.last_premium_paid_date, 
                         policy.next_premium_due_date,
-                        simulation_date,
+                        simulation_date,  # Explicitly set LastModified to simulation_date
                         getattr(policy, 'policy_id', 0)
-                    ), simulation_date)
+                    ), None)  # Pass None to prevent execute_non_query from modifying the date
                 except Exception as e:
                     logger.error(f"Error updating policy {policy.policy_number} payment dates: {e}")
         except Exception as e:

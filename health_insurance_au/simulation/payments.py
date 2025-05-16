@@ -52,7 +52,7 @@ def generate_premium_payments(policies: List[Policy], simulation_date: date) -> 
         # Determine payment method (use the one from the policy)
         payment_method = policy.payment_method
         
-        # Generate payment reference
+        # Generate payment reference using the simulation date
         payment_reference = generate_payment_reference(simulation_date)
         
         # Determine payment status (most are successful)
@@ -63,8 +63,10 @@ def generate_premium_payments(policies: List[Policy], simulation_date: date) -> 
         )[0]
         
         # Determine period start and end dates
+        # The period start date should be the current next_premium_due_date (which is the date being paid)
         period_start_date = policy.next_premium_due_date
         
+        # Calculate the next due date based on the premium frequency
         if policy.premium_frequency == 'Monthly':
             period_end_date = period_start_date + timedelta(days=30)
             next_due_date = period_end_date
