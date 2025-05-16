@@ -12,12 +12,20 @@ from health_insurance_au.utils.logging_config import get_logger
 # Set up logging
 logger = get_logger(__name__)
 
-def generate_payment_reference() -> str:
-    """Generate a random payment reference."""
-    # Format: PMT-YYYYMMDD-NNNNN where YYYYMMDD is the current date and NNNNN is a 5-digit number
-    today = date.today().strftime('%Y%m%d')
+def generate_payment_reference(payment_date: date = None) -> str:
+    """
+    Generate a random payment reference.
+    
+    Args:
+        payment_date: The date to use in the reference (default: today)
+        
+    Returns:
+        A payment reference string in the format PMT-YYYYMMDD-NNNNN
+    """
+    # Format: PMT-YYYYMMDD-NNNNN where YYYYMMDD is the payment date and NNNNN is a 5-digit number
+    date_str = (payment_date or date.today()).strftime('%Y%m%d')
     number = ''.join(random.choices(string.digits, k=5))
-    return f"PMT-{today}-{number}"
+    return f"PMT-{date_str}-{number}"
 
 def generate_premium_payments(policies: List[Policy], simulation_date: date) -> List[PremiumPayment]:
     """
@@ -45,7 +53,7 @@ def generate_premium_payments(policies: List[Policy], simulation_date: date) -> 
         payment_method = policy.payment_method
         
         # Generate payment reference
-        payment_reference = generate_payment_reference()
+        payment_reference = generate_payment_reference(simulation_date)
         
         # Determine payment status (most are successful)
         payment_status = random.choices(
