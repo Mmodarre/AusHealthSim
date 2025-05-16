@@ -34,6 +34,24 @@ def test_dynamic_data_generation():
         print(f"  Phone: {record.get('mobile_phone')}")
         print(f"  Medicare: {record.get('medicare_number')}")
     
+    # Verify data format constraints
+    for record in data:
+        # Verify phone number format (should be "04XX XXX XXX")
+        phone = record.get('mobile_phone', '')
+        assert phone.startswith('04'), f"Phone number should start with '04', got: {phone}"
+        assert len(phone) <= 20, f"Phone number too long: {phone}"
+        
+        # Verify field length constraints
+        assert len(record.get('member_id', '')) <= 20, f"Member ID too long: {record.get('member_id')}"
+        assert len(record.get('first_name', '')) <= 50, f"First name too long: {record.get('first_name')}"
+        assert len(record.get('last_name', '')) <= 50, f"Last name too long: {record.get('last_name')}"
+        assert len(record.get('address', '')) <= 100, f"Address too long: {record.get('address')}"
+        assert len(record.get('city', '')) <= 50, f"City too long: {record.get('city')}"
+        assert len(record.get('state', '')) <= 3, f"State too long: {record.get('state')}"
+        assert len(record.get('postcode', '')) <= 10, f"Postcode too long: {record.get('postcode')}"
+        assert len(record.get('email', '')) <= 100, f"Email too long: {record.get('email')}"
+        assert len(record.get('medicare_number', '')) <= 15, f"Medicare number too long: {record.get('medicare_number')}"
+    
     # Convert to Member objects
     members = convert_dynamic_to_members(data)
     
@@ -52,6 +70,12 @@ def test_dynamic_data_generation():
         print(f"  Email: {member.email}")
         print(f"  Mobile: {member.mobile_phone}")
         print(f"  Medicare: {member.medicare_number}")
+    
+    # Verify member object phone number format
+    for member in members:
+        phone = member.mobile_phone
+        assert phone.startswith('04'), f"Phone number should start with '04', got: {phone}"
+        assert len(phone) <= 20, f"Phone number too long: {phone}"
     
     return len(data) > 0 and len(members) > 0
 

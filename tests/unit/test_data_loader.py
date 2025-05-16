@@ -21,7 +21,7 @@ def sample_json_data():
             "date_of_birth": "1980-01-15",
             "gender": "Male",
             "email": "john.smith@example.com",
-            "mobile_phone": "0412345678",
+            "mobile_phone": "0412 345 678",
             "address": "123 Main St",
             "city": "Sydney",
             "state": "NSW",
@@ -33,7 +33,7 @@ def sample_json_data():
             "date_of_birth": "1985-05-20",
             "gender": "Female",
             "email": "jane.doe@example.com",
-            "mobile_phone": "0498765432",
+            "mobile_phone": "0498 765 432",
             "address": "456 Oak St",
             "city": "Melbourne",
             "state": "VIC",
@@ -80,7 +80,7 @@ def test_convert_to_members(sample_json_data):
     assert members[0].date_of_birth == date(1980, 1, 15)
     assert members[0].gender == "Male"
     assert members[0].email == "john.smith@example.com"
-    assert members[0].mobile_phone == "0412345678"
+    assert members[0].mobile_phone == "0412 345 678"
     assert members[0].address_line1 == "123 Main St"
     assert members[0].city == "Sydney"
     assert members[0].state == "NSW"
