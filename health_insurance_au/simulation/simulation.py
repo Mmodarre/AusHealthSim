@@ -516,6 +516,13 @@ class HealthInsuranceSimulation:
             logger.info("No premium payments due on this date")
             return
         
+        # Keep track of which policies were updated
+        updated_policies = []
+        for payment in new_payments:
+            policy = next((p for p in self.policies if getattr(p, 'policy_id', 0) == payment.policy_id), None)
+            if policy:
+                updated_policies.append(policy)
+        
         # Insert into database
         payment_dicts = [payment.to_dict() for payment in new_payments]
         try:
@@ -526,21 +533,20 @@ class HealthInsuranceSimulation:
             self.premium_payments.extend(new_payments)
             
             # Update policies with new payment dates
-            for policy in self.policies:
-                if policy.next_premium_due_date and policy.next_premium_due_date <= simulation_date:
-                    try:
-                        query = """
-                        UPDATE Insurance.Policies
-                        SET LastPremiumPaidDate = ?, NextPremiumDueDate = ?, LastModified = GETDATE()
-                        WHERE PolicyID = ?
-                        """
-                        execute_non_query(query, (
-                            policy.last_premium_paid_date, 
-                            policy.next_premium_due_date, 
-                            getattr(policy, 'policy_id', 0)
-                        ), simulation_date)
-                    except Exception as e:
-                        logger.error(f"Error updating policy {policy.policy_number} payment dates: {e}")
+            for policy in updated_policies:
+                try:
+                    query = """
+                    UPDATE Insurance.Policies
+                    SET LastPremiumPaidDate = ?, NextPremiumDueDate = ?, LastModified = GETDATE()
+                    WHERE PolicyID = ?
+                    """
+                    execute_non_query(query, (
+                        policy.last_premium_paid_date, 
+                        policy.next_premium_due_date, 
+                        getattr(policy, 'policy_id', 0)
+                    ), simulation_date)
+                except Exception as e:
+                    logger.error(f"Error updating policy {policy.policy_number} payment dates: {e}")
         except Exception as e:
             logger.error(f"Error adding premium payments to database: {e}")
     
