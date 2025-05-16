@@ -191,13 +191,13 @@ class HealthInsuranceSimulation:
         
         new_members = []
         if use_dynamic_data:
-            # Generate dynamic data
-            dynamic_data = generate_dynamic_data(count)
+            # Generate dynamic data - generate more than needed to ensure we have enough
+            dynamic_data = generate_dynamic_data(count * 2)  # Generate double to ensure enough data
             if not dynamic_data:
                 logger.error("Failed to generate dynamic data")
                 return
                 
-            # Convert to Member objects
+            # Convert to Member objects - our updated function will handle the count correctly
             new_members = convert_dynamic_to_members(dynamic_data, count)
         else:
             # Load sample data from static JSON file

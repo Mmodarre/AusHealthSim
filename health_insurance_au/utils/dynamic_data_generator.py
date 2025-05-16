@@ -93,13 +93,19 @@ def convert_to_members(data: List[Dict[str, Any]], count: int = None) -> List[Me
     """
     members = []
     
-    # If count is specified, get that many unused members
+    # If count is specified, use that many records from the data
+    # (don't use member_tracker for dynamic data)
     if count:
-        # Get unused members from the data
-        unused_data = get_unused_members(data, count)
-        data_to_convert = unused_data
+        # Just take the first 'count' items from the data
+        data_to_convert = data[:count]
     else:
         data_to_convert = data
+    
+    # If we don't have enough data, generate more
+    if count and len(data_to_convert) < count:
+        logger.info(f"Not enough data ({len(data_to_convert)} records), generating {count - len(data_to_convert)} more")
+        additional_data = generate_dynamic_data(count - len(data_to_convert))
+        data_to_convert.extend(additional_data)
     
     for item in data_to_convert:
         try:
