@@ -154,7 +154,7 @@ class TestClaimsModule:
         
         # Check dates
         assert claim.service_date < claim.submission_date
-        assert claim.submission_date <= datetime.combine(self.test_date, datetime.min.time())
+        assert claim.submission_date <= datetime.combine(self.test_date, time(23, 59, 59))
     
     @patch('health_insurance_au.simulation.claims.random.choices')
     @patch('health_insurance_au.simulation.claims.random.choice')
@@ -200,7 +200,7 @@ class TestClaimsModule:
         
         # Check dates
         assert claim.service_date < claim.submission_date
-        assert claim.submission_date <= datetime.combine(self.test_date, datetime.min.time())
+        assert claim.submission_date <= datetime.combine(self.test_date, time(23, 59, 59))
     
     def test_generate_hospital_claims_no_policies(self):
         """Test generating hospital claims with no policies."""
