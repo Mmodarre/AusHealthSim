@@ -13,6 +13,7 @@ PASSWORD=""
 DATABASE=""
 DROP=false
 ENV_FILE="$PROJECT_ROOT/config/db_config.env"
+INCLUDE_ENHANCED=true
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -47,8 +48,13 @@ while [[ $# -gt 0 ]]; do
             DROP=true
             shift
             ;;
+        --include-enhanced)
+            INCLUDE_ENHANCED=true
+            shift
+            ;;
         *)
             echo "Unknown option: $key"
+            echo "Usage: $0 [--server SERVER] [--username USERNAME] [--password PASSWORD] [--database DATABASE] [--env-file FILE] [--drop] [--include-enhanced]"
             exit 1
             ;;
     esac
@@ -76,4 +82,16 @@ if [ "$DROP" = true ]; then
 fi
 
 # Run the initialization script
+echo "Initializing database..."
 python3 "$PROJECT_ROOT/scripts/db/initialize_db.py" $CMD_ARGS
+
+# If enhanced mode is enabled, apply the schema extensions
+if [ "$INCLUDE_ENHANCED" = true ]; then
+    echo "Applying enhanced database schema..."
+    python3 "$PROJECT_ROOT/scripts/db/execute_sql.py" "$PROJECT_ROOT/scripts/extend_database_schema.sql" $CMD_ARGS
+    
+    echo "Adding enhanced initial data..."
+    python3 "$PROJECT_ROOT/scripts/db/add_enhanced_data.py" $CMD_ARGS
+fi
+
+echo "Database initialization completed!"

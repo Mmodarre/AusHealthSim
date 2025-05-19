@@ -20,6 +20,9 @@ A realistic simulation of an Australian health insurance company's operational d
   - Age distributions matching population demographics
   - Life stages with address and name changes over time
   - Data variants to simulate errors and changes
+  - Enhanced data generation for fraud detection and financial analysis
+  - Risk profiles and billing pattern detection
+  - Actuarial metrics and financial transactions
 - **Australian-Specific Elements**
   - Hospital cover tiers (Basic, Bronze, Silver, Gold)
   - Private Health Insurance (PHI) rebate tiers
@@ -67,8 +70,11 @@ cp config/db_config.env.example config/db_config.env
 
 #### On Linux/macOS:
 ```bash
-# Initialize the database schema
+# Initialize the database with standard schema
 ./bin/initialize_db.sh
+
+# Initialize the database with enhanced schema for fraud detection and financial analysis
+./bin/initialize_db.sh --include-enhanced
 
 # Add initial reference data
 ./bin/add_initial_data.sh
@@ -76,8 +82,11 @@ cp config/db_config.env.example config/db_config.env
 
 #### On Windows:
 ```batch
-# Initialize the database schema
+# Initialize the database with standard schema
 bin\initialize_db.bat
+
+# Initialize the database with enhanced schema for fraud detection and financial analysis
+bin\initialize_db.bat --include-enhanced
 
 # Add initial reference data
 bin\add_initial_data.bat
@@ -92,11 +101,17 @@ Run a realistic simulation with dynamic data generation:
 #### On Linux/macOS:
 ```bash
 ./bin/run_realistic_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
+
+# Run enhanced simulation with fraud detection and financial analysis
+./bin/run_enhanced_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
 ```
 
 #### On Windows:
 ```batch
 bin\run_realistic_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
+
+# Run enhanced simulation with fraud detection and financial analysis
+bin\run_enhanced_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31 --members-per-day 10
 ```
 
 ### Simulation Options
@@ -109,6 +124,24 @@ bin\run_realistic_simulation.bat --start-date 2023-01-01 --end-date 2023-01-31 -
 | `--log-level` | Logging level (DEBUG, INFO, WARNING, ERROR) |
 | `--reset-members` | Reset the list of used member IDs |
 | `--use-static-data` | Use static data from JSON file instead of dynamic generation |
+| `--disable-enhanced` | Disable enhanced simulation features (for enhanced simulation only) |
+
+### Enhanced Database Schema
+
+The enhanced database schema adds additional capabilities for fraud detection, financial analysis, and actuarial metrics:
+
+1. **Member Risk Profiles**: Extended attributes for risk scoring, chronic condition flags, and churn prediction
+2. **Policy Risk Attributes**: APRA entity codes, risk-adjusted loading, and underwriting scores
+3. **Fraud Detection**: Anomaly scores, fraud indicators, and pattern detection
+4. **Provider Billing Analysis**: Billing pattern scores, claim frequency ratings, and compliance scores
+5. **Financial Transactions**: Detailed tracking of all financial movements
+6. **Actuarial Metrics**: Loss ratios, lapse rates, and acquisition costs by demographic segments
+
+To enable these features, use the `--include-enhanced` flag when initializing the database:
+
+```bash
+./bin/initialize_db.sh --include-enhanced
+```
 
 ### Data Generation
 
@@ -148,13 +181,17 @@ The database is organized into the following schemas:
 
 Core operational tables for the insurance business:
 
-- **Members** - Personal information, contact details, Medicare numbers
+- **Members** - Personal information, contact details, Medicare numbers, risk profiles
 - **CoveragePlans** - Plan details, benefits, premiums, waiting periods
-- **Policies** - Policy details, status, coverage type, excess amounts
+- **Policies** - Policy details, status, coverage type, excess amounts, risk attributes
 - **PolicyMembers** - Relationship between policies and members
-- **Claims** - Claim details, status, payment information
-- **Providers** - Provider information, specialties, agreement status
+- **Claims** - Claim details, status, payment information, fraud indicators
+- **Providers** - Provider information, specialties, agreement status, billing patterns
 - **PremiumPayments** - Payment tracking, due dates, payment status
+- **FraudIndicators** - Reference data for fraud detection
+- **FinancialTransactions** - Financial transaction records
+- **ActuarialMetrics** - Reference data for actuarial analysis
+- **ClaimPatterns** - Tracking of claim patterns
 
 ### Regulatory Schema
 
@@ -226,6 +263,7 @@ Detailed documentation is available in the `docs/` directory:
 - [Change Data Capture](docs/change_data_capture.md)
 - [Synthea Integration](docs/synthea_integration.md)
 - [Dynamic Data Generation](docs/dynamic_data_generation.md)
+- [Enhanced Simulation](docs/enhanced_simulation.md)
 
 ## 📁 Project Structure
 
@@ -242,17 +280,25 @@ health_insurance_au/          # Main Python package
 │   ├── data_loader.py        # Load data from static files
 │   └── dynamic_data_generator.py  # Dynamic data integration
 ├── integration/              # External system integration
+├── data_generation/          # Enhanced data generation
+│   ├── fraud_patterns.py     # Fraud pattern generation
+│   ├── financial_transactions.py # Financial transaction generation
+│   ├── provider_billing.py   # Provider billing pattern generation
+│   ├── claim_patterns.py     # Claim pattern generation
+│   └── actuarial_data.py     # Actuarial data generation
 └── config.py                 # Configuration settings
 
 scripts/                      # Standalone scripts
 ├── db/                       # Database scripts
 └── simulation/               # Simulation scripts
-    └── realistic_simulation.py  # Realistic simulation script
+    ├── realistic_simulation.py  # Realistic simulation script
+    └── enhanced_realistic_simulation.py  # Enhanced simulation script
 
 bin/                          # Scripts for running operations
 ├── initialize_db.sh/.bat     # Database initialization
 ├── add_initial_data.sh/.bat  # Add initial data
 ├── run_realistic_simulation.sh/.bat  # Run realistic simulation
+├── run_enhanced_simulation.sh/.bat   # Run enhanced simulation
 ├── enable_cdc.sh/.bat        # Enable CDC
 └── run_tests.sh/.bat         # Run tests
 

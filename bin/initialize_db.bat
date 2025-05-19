@@ -12,6 +12,7 @@ SET "PASSWORD="
 SET "DATABASE="
 SET "DROP="
 SET "ENV_FILE=%PROJECT_ROOT%\config\db_config.env"
+SET "INCLUDE_ENHANCED=true"
 
 REM Parse command line arguments
 :parse_args
@@ -45,8 +46,12 @@ IF "%~1"=="--drop" (
     SET "DROP=--drop"
     GOTO next_arg
 )
+IF "%~1"=="--include-enhanced" (
+    SET "INCLUDE_ENHANCED=true"
+    GOTO next_arg
+)
 ECHO Unknown option: %~1
-ECHO Usage: %0 [--server SERVER] [--username USERNAME] [--password PASSWORD] [--database DATABASE] [--env-file FILE] [--drop]
+ECHO Usage: %0 [--server SERVER] [--username USERNAME] [--password PASSWORD] [--database DATABASE] [--env-file FILE] [--drop] [--include-enhanced]
 EXIT /B 1
 
 :next_arg
@@ -97,5 +102,14 @@ IF EXIST "%ENV_FILE%" (
 REM Run the initialization script
 ECHO Initializing database...
 python "%PROJECT_ROOT%\scripts\db\initialize_db.py" %CMD_ARGS% %DROP%
+
+REM If enhanced mode is enabled, apply the schema extensions
+IF "%INCLUDE_ENHANCED%"=="true" (
+    ECHO Applying enhanced database schema...
+    python "%PROJECT_ROOT%\scripts\db\execute_sql.py" "%PROJECT_ROOT%\scripts\extend_database_schema.sql" %CMD_ARGS%
+    
+    ECHO Adding enhanced initial data...
+    python "%PROJECT_ROOT%\scripts\db\add_enhanced_data.py" %CMD_ARGS%
+)
 
 ECHO Database initialization completed!
