@@ -114,10 +114,12 @@ class ProviderBillingGenerator:
         
         # Adjust based on average claim amount
         avg_amount = provider.get('AvgAmount', 0)
-        if avg_amount > 1000:
-            base_score += 0.1
-        elif avg_amount > 500:
-            base_score += 0.05
+        # Handle None value for avg_amount
+        if avg_amount is not None:
+            if avg_amount > 1000:
+                base_score += 0.1
+            elif avg_amount > 500:
+                base_score += 0.05
         
         # Add random variation
         base_score += random.uniform(-0.1, 0.1)
@@ -138,7 +140,7 @@ class ProviderBillingGenerator:
             else:
                 avg_amount = random.uniform(100, 500)
         
-        return round(avg_amount, 2)
+        return round(float(avg_amount), 2)
     
     def _calculate_claim_frequency_rating(self, provider: Dict[str, Any]) -> str:
         """Calculate the claim frequency rating for a provider."""
