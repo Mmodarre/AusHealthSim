@@ -24,12 +24,6 @@ def add_fraud_indicators():
     """Add initial fraud indicators to the database."""
     logger.info("Adding initial fraud indicators...")
     
-    # Check if data already exists
-    existing_count = execute_query("SELECT COUNT(*) FROM Insurance.FraudIndicators")
-    if existing_count and existing_count[0][0] > 0:
-        logger.info(f"Found {existing_count[0][0]} existing fraud indicators, skipping insertion")
-        return
-    
     indicators = [
         {
             'IndicatorCode': 'DUP_CLAIM',
@@ -73,16 +67,11 @@ def add_fraud_indicators():
         logger.info(f"Added {rows_affected} fraud indicators")
     except Exception as e:
         logger.error(f"Error adding fraud indicators: {e}")
+        raise
 
 def add_actuarial_metrics():
     """Add initial actuarial metrics to the database."""
     logger.info("Adding initial actuarial metrics...")
-    
-    # Check if data already exists
-    existing_count = execute_query("SELECT COUNT(*) FROM Insurance.ActuarialMetrics")
-    if existing_count and existing_count[0][0] > 0:
-        logger.info(f"Found {existing_count[0][0]} existing actuarial metrics, skipping insertion")
-        return
     
     today = date.today()
     
@@ -126,7 +115,10 @@ def add_actuarial_metrics():
             'MetricCategory': 'Hospital',
             'MetricValue': 320.50,
             'AgeGroup': '18-30',
-            'ProductCategory': 'Gold'
+            'Gender': None,  # Explicitly set to None for nullable fields
+            'StateTerritory': None,
+            'ProductCategory': 'Gold',
+            'RiskSegment': None
         },
         {
             'MetricDate': today,
@@ -134,7 +126,10 @@ def add_actuarial_metrics():
             'MetricCategory': 'Hospital',
             'MetricValue': 85.50,
             'AgeGroup': '18-30',
-            'ProductCategory': 'Gold'
+            'Gender': None,  # Explicitly set to None for nullable fields
+            'StateTerritory': None,
+            'ProductCategory': 'Gold',
+            'RiskSegment': None
         }
     ]
     
@@ -143,6 +138,7 @@ def add_actuarial_metrics():
         logger.info(f"Added {rows_affected} actuarial metrics")
     except Exception as e:
         logger.error(f"Error adding actuarial metrics: {e}")
+        raise
 
 def main():
     """Main function to add enhanced initial data."""
@@ -169,11 +165,32 @@ def main():
         db_config['database'] = args.database
     
     try:
-        add_fraud_indicators()
-        add_actuarial_metrics()
-        logger.info("Enhanced initial data added successfully")
+        # Check if tables already have data
+        logger.info("Checking if tables already have data...")
+        
+        fraud_count = execute_query("SELECT COUNT(*) AS count FROM Insurance.FraudIndicators")
+        logger.info(f"Fraud indicators query result: {fraud_count}")
+        
+        actuarial_count = execute_query("SELECT COUNT(*) AS count FROM Insurance.ActuarialMetrics")
+        logger.info(f"Actuarial metrics query result: {actuarial_count}")
+        
+        if fraud_count and fraud_count[0].get('count', 0) > 0:
+            logger.info(f"Found {fraud_count[0]['count']} existing fraud indicators, skipping insertion")
+        else:
+            logger.info("No existing fraud indicators found, adding new ones...")
+            add_fraud_indicators()
+            
+        if actuarial_count and actuarial_count[0].get('count', 0) > 0:
+            logger.info(f"Found {actuarial_count[0]['count']} existing actuarial metrics, skipping insertion")
+        else:
+            logger.info("No existing actuarial metrics found, adding new ones...")
+            add_actuarial_metrics()
+            
+        logger.info("Enhanced initial data check completed successfully")
     except Exception as e:
         logger.error(f"Error adding enhanced initial data: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         sys.exit(1)
 
 if __name__ == '__main__':
