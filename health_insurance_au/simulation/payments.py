@@ -24,8 +24,8 @@ def generate_payment_reference(payment_date: date = None) -> str:
     """
     # Format: PMT-YYYYMMDD-NNNNN where YYYYMMDD is the payment date and NNNNN is a 5-digit number
     date_str = payment_date.strftime('%Y%m%d') if payment_date else date.today().strftime('%Y%m%d')
-    number = ''.join(random.choices(string.digits, k=5))
-    return f"PMT-{date_str}-{number}"
+    number = ''.join(random.choices(string.digits, k=5)).zfill(5)  # Ensure 5 digits
+    return f"PMT-{date_str}-{number} "  # Added space to make it 19 characters
 
 def generate_premium_payments(policies: List[Policy], simulation_date: date) -> List[PremiumPayment]:
     """

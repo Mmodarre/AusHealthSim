@@ -8,10 +8,11 @@ This script runs all the tests for the project, including:
 3. End-to-end tests
 
 Usage:
-    python run_tests.py [--e2e] [--date YYYY-MM-DD]
+    python run_tests.py [--e2e] [--unit] [--date YYYY-MM-DD]
 
 Options:
     --e2e           Run end-to-end tests (requires database connection)
+    --unit          Run unit tests only
     --date          Simulation date for end-to-end tests (default: today)
 """
 
@@ -22,7 +23,7 @@ import sys
 from datetime import date
 
 # Add project root to Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 def parse_date(date_str):
     """Parse date string in YYYY-MM-DD format."""
@@ -39,16 +40,18 @@ def run_unit_tests():
     env = os.environ.copy()
     env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
     
-    # Placeholder for unit test execution
-    # Uncomment and modify when unit tests are implemented
-    # result = subprocess.run(['python3', '-m', 'unittest', 'discover', '-s', 'tests/unit'], 
-    #                        capture_output=True, text=True, env=env)
-    # print(result.stdout)
-    # if result.returncode != 0:
-    #     print(f"Unit tests failed with exit code {result.returncode}")
-    #     print(result.stderr)
-    #     return False
-    print("Unit tests are not implemented yet.")
+    # Run pytest on the unit test directory
+    result = subprocess.run(
+        ['python3', '-m', 'pytest', 'tests/unit', '-v'], 
+        capture_output=True, 
+        text=True, 
+        env=env
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(f"Unit tests failed with exit code {result.returncode}")
+        print(result.stderr)
+        return False
     return True
 
 def run_integration_tests():
@@ -58,16 +61,18 @@ def run_integration_tests():
     env = os.environ.copy()
     env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
     
-    # Placeholder for integration test execution
-    # Uncomment and modify when integration tests are implemented
-    # result = subprocess.run(['python3', '-m', 'unittest', 'discover', '-s', 'tests/integration'], 
-    #                        capture_output=True, text=True, env=env)
-    # print(result.stdout)
-    # if result.returncode != 0:
-    #     print(f"Integration tests failed with exit code {result.returncode}")
-    #     print(result.stderr)
-    #     return False
-    print("Integration tests are not implemented yet.")
+    # Run pytest on the integration test directory
+    result = subprocess.run(
+        ['python3', '-m', 'pytest', 'tests/integration', '-v'], 
+        capture_output=True, 
+        text=True, 
+        env=env
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(f"Integration tests failed with exit code {result.returncode}")
+        print(result.stderr)
+        return False
     return True
 
 def run_e2e_tests(simulation_date):
@@ -113,6 +118,8 @@ def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description='Run tests for the insurance simulation project')
     parser.add_argument('--e2e', action='store_true', help='Run end-to-end tests')
+    parser.add_argument('--unit', action='store_true', help='Run unit tests only')
+    parser.add_argument('--integration', action='store_true', help='Run integration tests only')
     parser.add_argument('--date', type=parse_date, default=date.today(), help='Simulation date for end-to-end tests (YYYY-MM-DD)')
     
     args = parser.parse_args()
@@ -120,15 +127,22 @@ def main():
     # Change to the project root directory
     os.chdir(project_root)
     
+    # If no specific test type is specified, run all tests
+    run_all = not (args.unit or args.integration or args.e2e)
+    
     # Run unit tests
-    unit_success = run_unit_tests()
+    unit_success = True
+    if args.unit or run_all:
+        unit_success = run_unit_tests()
     
     # Run integration tests
-    integration_success = run_integration_tests()
+    integration_success = True
+    if args.integration or run_all:
+        integration_success = run_integration_tests()
     
     # Run end-to-end tests if requested
     e2e_success = True
-    if args.e2e:
+    if args.e2e or run_all:
         e2e_success = run_e2e_tests(args.date)
     
     # Overall success
@@ -136,9 +150,11 @@ def main():
     
     # Print summary
     print("\nTest Summary:")
-    print(f"Unit Tests: {'PASS' if unit_success else 'FAIL'}")
-    print(f"Integration Tests: {'PASS' if integration_success else 'FAIL'}")
-    if args.e2e:
+    if args.unit or run_all:
+        print(f"Unit Tests: {'PASS' if unit_success else 'FAIL'}")
+    if args.integration or run_all:
+        print(f"Integration Tests: {'PASS' if integration_success else 'FAIL'}")
+    if args.e2e or run_all:
         print(f"End-to-End Tests: {'PASS' if e2e_success else 'FAIL'}")
     
     # Exit with appropriate status code

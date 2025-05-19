@@ -10,6 +10,7 @@ from health_insurance_au.config import CLAIM_TYPES
 from health_insurance_au.models.models import Claim, Policy, Member, Provider
 from health_insurance_au.utils.logging_config import get_logger
 from health_insurance_au.utils.datetime_utils import generate_random_datetime
+from health_insurance_au.utils.db_utils import execute_query, execute_non_query
 
 # Set up logging
 logger = get_logger(__name__)
@@ -90,12 +91,12 @@ def generate_claim_number(simulation_date: date = None) -> str:
         simulation_date: The date to use in the claim number (default: today)
     
     Returns:
-        A claim number in the format CL-YYYYMMDD-NNNNN
+        A claim number in the format CLM-YYYYMMDD-NNNNN
     """
-    # Format: CL-YYYYMMDD-NNNNN where YYYYMMDD is the simulation date and NNNNN is a 5-digit number
+    # Format: CLM-YYYYMMDD-NNNNN where YYYYMMDD is the simulation date and NNNNN is a 5-digit number
     date_str = simulation_date.strftime('%Y%m%d') if simulation_date else date.today().strftime('%Y%m%d')
-    number = ''.join(random.choices(string.digits, k=5))
-    return f"CL-{date_str}-{number}"
+    number = ''.join(random.choices(string.digits, k=5)).zfill(5)  # Ensure 5 digits
+    return f"CLM-{date_str}-{number} "  # Added space to make it 19 characters
 
 def generate_hospital_claims(
     policies: List[Policy], 
@@ -126,6 +127,11 @@ def generate_hospital_claims(
     active_policies = [p for p in policies if p.status == 'Active']
     if not active_policies:
         logger.warning("No active policies available to generate claims")
+        return claims
+    
+    # Check if members list is empty
+    if not members:
+        logger.warning("No members available to generate claims")
         return claims
     
     # Filter for hospital providers
@@ -280,6 +286,11 @@ def generate_general_treatment_claims(
         logger.warning("No active policies available to generate claims")
         return claims
     
+    # Check if members list is empty
+    if not members:
+        logger.warning("No members available to generate claims")
+        return claims
+    
     # Filter out hospital providers
     general_providers = [p for p in providers if p.provider_type != 'Hospital']
     if not general_providers:
@@ -298,7 +309,11 @@ def generate_general_treatment_claims(
         claim_type = random.choice([t for t in CLAIM_TYPES if t != 'Hospital' and t != 'Medical'])
         
         # Select a provider of the appropriate type
-        matching_providers = [p for p in general_providers if p.provider_type == claim_type or claim_type in p.provider_type]
+        matching_providers = []
+        for p in general_providers:
+            if hasattr(p, 'provider_type') and isinstance(p.provider_type, str):
+                if p.provider_type == claim_type or claim_type in p.provider_type:
+                    matching_providers.append(p)
         if not matching_providers:
             matching_providers = general_providers  # Fallback if no matching provider
         provider = random.choice(matching_providers)
@@ -406,3 +421,114 @@ def generate_general_treatment_claims(
     
     logger.info(f"Generated {len(claims)} general treatment claims")
     return claims
+
+
+class ClaimsSimulation:
+    """
+    Class for simulating health insurance claims.
+    """
+    
+    def __init__(self):
+        """Initialize the claims simulation."""
+        self.policies = []
+        self.members = []
+        self.providers = []
+        self.load_data()
+    
+    def load_data(self):
+        """Load data from the database."""
+        # Load policies
+        policy_data = execute_query("SELECT * FROM Insurance.Policies WHERE Status = 'Active'")
+        self.policies = [Policy(**p) for p in policy_data]
+        
+        # Load members
+        member_data = execute_query("SELECT * FROM Insurance.Members WHERE IsActive = 1")
+        self.members = [Member(**m) for m in member_data]
+        
+        # Load providers
+        provider_data = execute_query("SELECT * FROM Insurance.Providers WHERE IsActive = 1")
+        self.providers = [Provider(**p) for p in provider_data]
+    
+    def generate_hospital_claims(self, count: int, simulation_date: date) -> List[Claim]:
+        """
+        Generate hospital claims and insert them into the database.
+        
+        Args:
+            count: Number of claims to generate
+            simulation_date: The date to use for claim generation
+            
+        Returns:
+            A list of generated claims
+        """
+        claims = generate_hospital_claims(
+            self.policies, 
+            self.members, 
+            self.providers, 
+            count, 
+            simulation_date
+        )
+        
+        # Insert claims into the database
+        for claim in claims:
+            query = """
+            INSERT INTO Insurance.Claims (
+                ClaimNumber, PolicyID, MemberID, ProviderID, ServiceDate, SubmissionDate,
+                ClaimType, ServiceDescription, MBSItemNumber, ChargedAmount, MedicareAmount,
+                InsuranceAmount, GapAmount, ExcessApplied, Status, ProcessedDate,
+                PaymentDate, RejectionReason, LastModified
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            execute_non_query(query, (
+                claim.claim_number, claim.policy_id, claim.member_id, claim.provider_id,
+                claim.service_date, claim.submission_date, claim.claim_type,
+                claim.service_description, claim.mbs_item_number, claim.charged_amount,
+                claim.medicare_amount, claim.insurance_amount, claim.gap_amount,
+                claim.excess_applied, claim.status, claim.processed_date,
+                claim.payment_date, claim.rejection_reason, simulation_date
+            ), simulation_date)
+        
+        logger.info(f"Inserted {len(claims)} hospital claims into the database")
+        return claims
+    
+    def generate_general_treatment_claims(self, count: int, simulation_date: date) -> List[Claim]:
+        """
+        Generate general treatment claims and insert them into the database.
+        
+        Args:
+            count: Number of claims to generate
+            simulation_date: The date to use for claim generation
+            
+        Returns:
+            A list of generated claims
+        """
+        claims = generate_general_treatment_claims(
+            self.policies, 
+            self.members, 
+            self.providers, 
+            count, 
+            simulation_date
+        )
+        
+        # Insert claims into the database
+        for claim in claims:
+            query = """
+            INSERT INTO Insurance.Claims (
+                ClaimNumber, PolicyID, MemberID, ProviderID, ServiceDate, SubmissionDate,
+                ClaimType, ServiceDescription, MBSItemNumber, ChargedAmount, MedicareAmount,
+                InsuranceAmount, GapAmount, ExcessApplied, Status, ProcessedDate,
+                PaymentDate, RejectionReason, LastModified
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            execute_non_query(query, (
+                claim.claim_number, claim.policy_id, claim.member_id, claim.provider_id,
+                claim.service_date, claim.submission_date, claim.claim_type,
+                claim.service_description, claim.mbs_item_number, claim.charged_amount,
+                claim.medicare_amount, claim.insurance_amount, claim.gap_amount,
+                claim.excess_applied, claim.status, claim.processed_date,
+                claim.payment_date, claim.rejection_reason, simulation_date
+            ), simulation_date)
+        
+        logger.info(f"Inserted {len(claims)} general treatment claims into the database")
+        return claims

@@ -9,21 +9,48 @@ The testing framework is organized as follows:
 ```
 tests/
 ├── unit/                  # Unit tests for individual components
-│   ├── test_claims.py     # Tests for claims generation
-│   ├── test_db_utils.py   # Tests for database utilities
-│   ├── test_models.py     # Tests for data models
-│   ├── test_simulation.py # Tests for the simulation engine
-│   └── test_date_consistency.py # Tests for date consistency
+│   ├── models/            # Tests for data models
+│   ├── simulation/        # Tests for simulation modules
+│   └── utils/             # Tests for utility functions
 ├── integration/           # Integration tests for component interactions
-│   ├── test_db_integration.py   # Tests for database integration
-│   └── test_date_consistency_integration.py # Tests for date consistency across components
-└── conftest.py            # Pytest configuration and fixtures
-
-scripts/
-└── testing/               # Testing scripts
-    ├── test_date_consistency_e2e.py # End-to-end test for date consistency
-    └── run_tests.py       # Script to run all tests
+│   ├── test_db_integration.py        # Tests for database operations
+│   ├── test_model_integration.py     # Tests for model interactions with database
+│   ├── test_simulation_integration.py # Tests for simulation components
+│   ├── test_cdc_integration.py       # Tests for CDC functionality
+│   └── test_synthea_integration.py   # Tests for Synthea FHIR integration
+├── test_date_consistency_e2e.py      # End-to-end test for date consistency
+├── conftest.py                       # Pytest configuration and fixtures
+└── run_tests.py                      # Script to run all tests
 ```
+
+## Test Types
+
+### Unit Tests
+
+Unit tests focus on testing individual components in isolation, using mocks and stubs to avoid external dependencies. These tests verify the correctness of:
+
+- Data models and their methods
+- Utility functions
+- Simulation logic
+- Database utility functions (mocked)
+
+### Integration Tests
+
+Integration tests verify the interaction between different components of the system, including:
+
+- Database operations with the actual database
+- Model interactions with the database
+- Simulation components working together
+- CDC (Change Data Capture) functionality
+- Synthea FHIR data integration
+
+### End-to-End Tests
+
+End-to-end tests validate the entire system working together, simulating real-world scenarios:
+
+- Running a complete daily simulation
+- Verifying date consistency across all generated data
+- Testing the full workflow from data generation to database storage
 
 ## Date Consistency Testing
 
@@ -41,48 +68,40 @@ The date consistency tests verify that:
 
 ## Running the Tests
 
-### Unit Tests
+### Using run_tests.py
 
-To run all unit tests:
+The `run_tests.py` script provides a convenient way to run different types of tests:
 
 ```bash
+# Run all tests (unit, integration, and e2e)
+python tests/run_tests.py
+
+# Run only unit tests
+python tests/run_tests.py --unit
+
+# Run only integration tests
+python tests/run_tests.py --integration
+
+# Run only end-to-end tests
+python tests/run_tests.py --e2e --date 2022-10-22
+```
+
+### Using pytest directly
+
+You can also use pytest directly:
+
+```bash
+# Run all unit tests
 pytest tests/unit
-```
 
-To run specific unit tests:
-
-```bash
-pytest tests/unit/test_date_consistency.py
-```
-
-### Integration Tests
-
-To run all integration tests:
-
-```bash
+# Run all integration tests
 pytest tests/integration
-```
 
-### End-to-End Tests
+# Run a specific test file
+pytest tests/integration/test_db_integration.py
 
-The end-to-end tests require a connection to the database. To run the end-to-end tests:
-
-```bash
-python scripts/testing/test_date_consistency_e2e.py --date 2022-10-22
-```
-
-### Running All Tests
-
-To run all tests (unit and integration):
-
-```bash
-python scripts/testing/run_tests.py
-```
-
-To include end-to-end tests:
-
-```bash
-python scripts/testing/run_tests.py --e2e --date 2022-10-22
+# Run a specific test function
+pytest tests/integration/test_db_integration.py::TestDatabaseIntegration::test_connection
 ```
 
 ## Test Coverage
@@ -93,6 +112,8 @@ The testing framework aims to provide comprehensive coverage of the codebase, wi
 2. Database operations
 3. Data generation for all entity types
 4. Simulation flow and control
+5. CDC functionality
+6. Synthea FHIR integration
 
 ## Continuous Integration
 
