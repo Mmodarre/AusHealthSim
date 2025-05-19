@@ -34,6 +34,9 @@ class ClaimPatternGenerator:
         # Get claims for analysis
         claims = self._get_claims_for_analysis(simulation_date)
         
+        # Get existing patterns to avoid duplicates
+        existing_patterns = self._get_existing_patterns()
+        
         # Analyze claims and generate patterns
         patterns = []
         
@@ -53,14 +56,20 @@ class ClaimPatternGenerator:
             
             # Check for high frequency pattern
             if len(member_claims) >= 5:
-                pattern = self._create_high_frequency_pattern(member_id, provider_id, member_claims, simulation_date)
-                patterns.append(pattern)
+                # Check if this pattern already exists
+                pattern_key = (member_id, provider_id, "High Frequency")
+                if pattern_key not in existing_patterns:
+                    pattern = self._create_high_frequency_pattern(member_id, provider_id, member_claims, simulation_date)
+                    patterns.append(pattern)
             
             # Check for high value pattern
             avg_amount = sum(claim['ChargedAmount'] for claim in member_claims) / len(member_claims)
             if avg_amount > 1000:
-                pattern = self._create_high_value_pattern(member_id, provider_id, member_claims, simulation_date)
-                patterns.append(pattern)
+                # Check if this pattern already exists
+                pattern_key = (member_id, provider_id, "High Value")
+                if pattern_key not in existing_patterns:
+                    pattern = self._create_high_value_pattern(member_id, provider_id, member_claims, simulation_date)
+                    patterns.append(pattern)
             
             # Check for service clustering pattern
             service_dates = [claim['ServiceDate'] for claim in member_claims]
@@ -70,8 +79,11 @@ class ClaimPatternGenerator:
                 date_diffs.append(diff)
             
             if len(date_diffs) > 0 and sum(date_diffs) / len(date_diffs) < 7:
-                pattern = self._create_service_clustering_pattern(member_id, provider_id, member_claims, simulation_date)
-                patterns.append(pattern)
+                # Check if this pattern already exists
+                pattern_key = (member_id, provider_id, "Service Clustering")
+                if pattern_key not in existing_patterns:
+                    pattern = self._create_service_clustering_pattern(member_id, provider_id, member_claims, simulation_date)
+                    patterns.append(pattern)
         
         # Insert patterns into the database
         patterns_inserted = 0
@@ -82,6 +94,21 @@ class ClaimPatternGenerator:
         return {
             'patterns_generated': patterns_inserted
         }
+    
+    def _get_existing_patterns(self) -> set:
+        """Get existing patterns from the database to avoid duplicates."""
+        try:
+            query = """
+            SELECT MemberID, ProviderID, PatternType
+            FROM Insurance.ClaimPatterns
+            """
+            results = execute_query(query)
+            
+            # Create a set of tuples (MemberID, ProviderID, PatternType) for quick lookup
+            return {(row['MemberID'], row['ProviderID'], row['PatternType']) for row in results}
+        except Exception as e:
+            print(f"Error getting existing patterns: {e}")
+            return set()
     
     def _get_members_with_claims(self, simulation_date: date) -> List[Dict[str, Any]]:
         """Get members with claims from the database."""
