@@ -15,12 +15,21 @@ Example:
 import argparse
 import logging
 import sys
+import os
 from datetime import datetime, date, timedelta
 from typing import Dict, Any, List
 
-from health_insurance_au.simulation.simulation import HealthInsuranceSimulation
-from health_insurance_au.utils.db_utils import execute_query
-from health_insurance_au.utils.logging_config import configure_logging, get_logger
+# Add parent directory to sys.path to ensure imports work correctly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+try:
+    from health_insurance_au.simulation.simulation import HealthInsuranceSimulation
+    from health_insurance_au.utils.db_utils import execute_query
+    from health_insurance_au.utils.logging_config import configure_logging, get_logger
+except ImportError as e:
+    print(f"Import error: {e}")
+    print(f"Current sys.path: {sys.path}")
+    sys.exit(1)
 
 # Set up logging
 logger = get_logger(__name__)
