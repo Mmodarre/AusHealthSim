@@ -90,7 +90,7 @@ def main():
         # Run daily simulation
         simulation = HealthInsuranceSimulation()
         simulation.run_daily_simulation(
-            simulation_date=args.date or date.today(),
+            simulation_date=args.date,
             add_new_members=not args.no_members,
             new_members_count=args.members,
             add_new_plans=args.plans > 0,
@@ -111,7 +111,7 @@ def main():
         simulation = HealthInsuranceSimulation()
         simulation.run_historical_simulation(
             start_date=args.start_date,
-            end_date=args.end_date or date.today(),
+            end_date=args.end_date,
             frequency=args.frequency
         )
     elif args.command == 'synthea':

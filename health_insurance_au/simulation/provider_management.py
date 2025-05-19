@@ -24,6 +24,9 @@ def end_provider_agreements(percentage: float = 5.0, simulation_date: Optional[d
     """
     logger.info(f"Ending agreements for approximately {percentage}% of providers...")
     
+    if simulation_date is None:
+        simulation_date = date.today()
+    
     # Get active preferred providers with no end date from database
     providers_data = execute_query("""
         SELECT * FROM Insurance.Providers 
@@ -43,8 +46,8 @@ def end_provider_agreements(percentage: float = 5.0, simulation_date: Optional[d
     
     updated_count = 0
     for provider in providers_to_update:
-        # Set end date to a random date in the next 30-90 days
-        end_date = (simulation_date or date.today()) + timedelta(days=random.randint(30, 90))
+        # Set end date to a random date in the future relative to simulation date
+        end_date = simulation_date + timedelta(days=random.randint(30, 90))
         
         # Update the database
         try:
@@ -69,6 +72,9 @@ def update_provider_details(percentage: float = 10.0, simulation_date: Optional[
         simulation_date: The date to use for LastModified
     """
     logger.info(f"Updating approximately {percentage}% of providers...")
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Get providers from database
     providers_data = execute_query("SELECT * FROM Insurance.Providers WHERE IsActive = 1")
@@ -121,10 +127,10 @@ def update_provider_details(percentage: float = 10.0, simulation_date: Optional[
             
             # If becoming preferred, add agreement dates
             if is_preferred_provider:
-                agreement_start_date = simulation_date or date.today()
+                agreement_start_date = simulation_date
                 # 70% chance of having an end date
                 if random.random() < 0.7:
-                    agreement_end_date = (simulation_date or date.today()) + timedelta(days=random.randint(365, 1095))
+                    agreement_end_date = simulation_date + timedelta(days=random.randint(365, 1095))
             else:
                 agreement_start_date = None
                 agreement_end_date = None

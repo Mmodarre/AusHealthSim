@@ -4,7 +4,7 @@ Main simulation module for the Health Insurance AU simulation.
 import random
 import json
 from datetime import datetime, date, timedelta
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 
 from health_insurance_au.utils.db_utils import (
     execute_query, execute_non_query, 
@@ -178,7 +178,7 @@ class HealthInsuranceSimulation:
         
         logger.info(f"Loaded {len(self.members)} members, {len(self.coverage_plans)} coverage plans, {len(self.policies)} policies, and {len(self.providers)} providers from database")
     
-    def add_members(self, count: int = 10, simulation_date: Optional[date] = None, use_dynamic_data: bool = True):
+    def add_members(self, count: int = 10, simulation_date: date = None, use_dynamic_data: bool = True):
         """
         Add new members to the database.
         
@@ -224,7 +224,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding members to database: {e}")
     
-    def add_coverage_plans(self, count: int = 5, simulation_date: Optional[date] = None):
+    def add_coverage_plans(self, count: int = 5, simulation_date: date = None):
         """
         Add new coverage plans to the database.
         
@@ -235,7 +235,7 @@ class HealthInsuranceSimulation:
         logger.info(f"Adding {count} new coverage plans...")
         
         # Generate coverage plans
-        new_plans = generate_coverage_plans(count)
+        new_plans = generate_coverage_plans(count, simulation_date)
         if not new_plans:
             logger.error("Failed to generate coverage plans")
             return
@@ -251,7 +251,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding coverage plans to database: {e}")
     
-    def add_providers(self, count: int = 20, simulation_date: Optional[date] = None):
+    def add_providers(self, count: int = 20, simulation_date: date = None):
         """
         Add new providers to the database.
         
@@ -262,7 +262,7 @@ class HealthInsuranceSimulation:
         logger.info(f"Adding {count} new providers...")
         
         # Generate providers
-        new_providers = generate_providers(count)
+        new_providers = generate_providers(count, simulation_date)
         if not new_providers:
             logger.error("Failed to generate providers")
             return
@@ -278,7 +278,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding providers to database: {e}")
     
-    def create_new_policies(self, count: int = 10, simulation_date: Optional[date] = None):
+    def create_new_policies(self, count: int = 10, simulation_date: date = None):
         """
         Create new policies for members.
         
@@ -293,7 +293,7 @@ class HealthInsuranceSimulation:
             return
         
         # Generate policies
-        new_policies, new_policy_members = generate_policies(self.members, self.coverage_plans, count)
+        new_policies, new_policy_members = generate_policies(self.members, self.coverage_plans, count, simulation_date)
         if not new_policies:
             logger.error("Failed to generate policies")
             return
@@ -321,7 +321,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding policy members to database: {e}")
     
-    def update_members(self, percentage: float = 5.0, simulation_date: Optional[date] = None):
+    def update_members(self, percentage: float = 5.0, simulation_date: date = None):
         """
         Update a percentage of members with new information.
         
@@ -368,7 +368,7 @@ class HealthInsuranceSimulation:
         
         logger.info(f"Updated {len(members_to_update)} members")
     
-    def process_policy_changes(self, percentage: float = 2.0, simulation_date: Optional[date] = None):
+    def process_policy_changes(self, percentage: float = 2.0, simulation_date: date = None):
         """
         Process changes to a percentage of policies.
         
@@ -433,7 +433,7 @@ class HealthInsuranceSimulation:
         
         logger.info(f"Processed changes for {len(policies_to_change)} policies")
     
-    def generate_hospital_claims(self, count: int = 5, simulation_date: Optional[date] = None):
+    def generate_hospital_claims(self, count: int = 5, simulation_date: date = None):
         """
         Generate hospital claims.
         
@@ -448,7 +448,7 @@ class HealthInsuranceSimulation:
             return
         
         # Generate claims
-        new_claims = generate_hospital_claims(self.policies, self.members, self.providers, count)
+        new_claims = generate_hospital_claims(self.policies, self.members, self.providers, count, simulation_date)
         if not new_claims:
             logger.error("Failed to generate hospital claims")
             return
@@ -464,7 +464,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding hospital claims to database: {e}")
     
-    def generate_general_treatment_claims(self, count: int = 15, simulation_date: Optional[date] = None):
+    def generate_general_treatment_claims(self, count: int = 15, simulation_date: date = None):
         """
         Generate general treatment claims.
         
@@ -479,7 +479,7 @@ class HealthInsuranceSimulation:
             return
         
         # Generate claims
-        new_claims = generate_general_treatment_claims(self.policies, self.members, self.providers, count)
+        new_claims = generate_general_treatment_claims(self.policies, self.members, self.providers, count, simulation_date)
         if not new_claims:
             logger.error("Failed to generate general treatment claims")
             return
@@ -556,7 +556,7 @@ class HealthInsuranceSimulation:
         except Exception as e:
             logger.error(f"Error adding premium payments to database: {e}")
     
-    def process_claim_assessments(self, percentage: float = 80.0, simulation_date: Optional[date] = None):
+    def process_claim_assessments(self, percentage: float = 80.0, simulation_date: date = None):
         """
         Process a percentage of submitted claims.
         
@@ -566,6 +566,9 @@ class HealthInsuranceSimulation:
         """
         logger.info(f"Processing approximately {percentage}% of submitted claims...")
         
+        if simulation_date is None:
+            simulation_date = date.today()
+            
         # Get submitted claims from database
         submitted_claims = execute_query("""
             SELECT * FROM Insurance.Claims 
@@ -591,14 +594,16 @@ class HealthInsuranceSimulation:
             )[0]
             
             # Set processed date
-            processed_date = simulation_date if simulation_date else date.today()
+            processed_date = simulation_date
             
             # Set payment date and rejection reason
             payment_date = None
             rejection_reason = None
             
             if new_status == 'Paid':
-                payment_date = processed_date + timedelta(days=random.randint(1, 3))
+                # Payment date should be on or after the simulation date
+                # For simulation purposes, we'll use the simulation date
+                payment_date = simulation_date
             elif new_status == 'Rejected':
                 rejection_reasons = [
                     'Service not covered by policy',
@@ -767,19 +772,6 @@ class HealthInsuranceSimulation:
             end_date = date.today()
             
         logger.info(f"Running historical simulation from {start_date} to {end_date} with {frequency} frequency...")
-        
-        # # Initialize with some base data
-        # # Add initial members
-        # self.add_members(100)
-        
-        # # Add providers
-        # self.add_providers(50)
-        
-        # # Add coverage plans
-        # self.add_coverage_plans(15)
-        
-        # # Create initial policies
-        # self.create_new_policies(50)
         
         # Determine the date increment based on frequency
         if frequency == 'daily':

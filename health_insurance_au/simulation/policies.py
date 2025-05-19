@@ -63,7 +63,7 @@ def calculate_premium(plan: CoveragePlan, coverage_type: str, excess_amount: flo
     # Round to 2 decimal places
     return round(premium, 2)
 
-def generate_policies(members: List[Member], plans: List[CoveragePlan], count: int = 10) -> Tuple[List[Policy], List[PolicyMember]]:
+def generate_policies(members: List[Member], plans: List[CoveragePlan], count: int = 10, simulation_date: date = None) -> Tuple[List[Policy], List[PolicyMember]]:
     """
     Generate policies for members.
     
@@ -71,6 +71,7 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
         members: List of members to create policies for
         plans: List of available coverage plans
         count: Number of policies to generate
+        simulation_date: The date to use for policy generation (default: today)
         
     Returns:
         A tuple of (policies, policy_members)
@@ -78,6 +79,9 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
     if not members or not plans:
         logger.warning("No members or plans available to generate policies")
         return [], []
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Ensure we don't try to create more policies than we have members
     count = min(count, len(members))
@@ -144,8 +148,8 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
         # Apply LHC loading
         lhc_loading_percentage = primary_member.lhc_loading_percentage
         
-        # Generate start date (between 1 and 3 years ago)
-        start_date = date.today() - timedelta(days=random.randint(30, 1095))
+        # Generate start date (between 1 and 3 years ago, relative to simulation date)
+        start_date = simulation_date - timedelta(days=random.randint(30, 1095))
         
         # Determine payment frequency
         payment_frequency = random.choices(
@@ -161,8 +165,8 @@ def generate_policies(members: List[Member], plans: List[CoveragePlan], count: i
             k=1
         )[0]
         
-        # Generate last premium paid date and next due date
-        last_paid_date = date.today() - timedelta(days=random.randint(0, 30))
+        # Generate last premium paid date and next due date (relative to simulation date)
+        last_paid_date = simulation_date - timedelta(days=random.randint(0, 30))
         
         if payment_frequency == 'Monthly':
             next_due_date = last_paid_date + timedelta(days=30)

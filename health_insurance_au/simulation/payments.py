@@ -23,7 +23,7 @@ def generate_payment_reference(payment_date: date = None) -> str:
         A payment reference string in the format PMT-YYYYMMDD-NNNNN
     """
     # Format: PMT-YYYYMMDD-NNNNN where YYYYMMDD is the payment date and NNNNN is a 5-digit number
-    date_str = (payment_date or date.today()).strftime('%Y%m%d')
+    date_str = payment_date.strftime('%Y%m%d') if payment_date else date.today().strftime('%Y%m%d')
     number = ''.join(random.choices(string.digits, k=5))
     return f"PMT-{date_str}-{number}"
 

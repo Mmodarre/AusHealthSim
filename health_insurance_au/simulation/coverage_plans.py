@@ -114,17 +114,21 @@ COMBINED_PLANS = [
     }
 ]
 
-def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
+def generate_coverage_plans(count: int = 5, simulation_date: date = None) -> List[CoveragePlan]:
     """
     Generate a list of coverage plans.
     
     Args:
         count: Number of plans to generate
+        simulation_date: The date to use for plan generation (default: today)
         
     Returns:
         A list of CoveragePlan objects
     """
     plans = []
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Determine how many of each type to create
     hospital_count = max(1, count // 3)
@@ -174,7 +178,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
             coverage_details['restricted_services'] = []
             coverage_details['excluded_services'] = []
         
-        # Create the plan
+        # Create the plan with effective date relative to simulation date
         plan = CoveragePlan(
             plan_code=f"H{i+1:03d}",
             plan_name=template['name'],
@@ -185,7 +189,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
             excess_options=excess_options,
             waiting_periods=waiting_periods,
             coverage_details=coverage_details,
-            effective_date=date.today() - timedelta(days=random.randint(30, 365))
+            effective_date=simulation_date - timedelta(days=random.randint(30, 365))
         )
         
         plans.append(plan)
@@ -205,7 +209,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
             'optical': 2
         }
         
-        # Create the plan
+        # Create the plan with effective date relative to simulation date
         plan = CoveragePlan(
             plan_code=f"E{i+1:03d}",
             plan_name=template['name'],
@@ -214,7 +218,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
             annual_premium=monthly_premium * 12,
             waiting_periods=waiting_periods,
             coverage_details=template['coverage'],
-            effective_date=date.today() - timedelta(days=random.randint(30, 365))
+            effective_date=simulation_date - timedelta(days=random.randint(30, 365))
         )
         
         plans.append(plan)
@@ -240,7 +244,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
             'optical': 2
         })
         
-        # Create the plan
+        # Create the plan with effective date relative to simulation date
         plan = CoveragePlan(
             plan_code=f"C{i+1:03d}",
             plan_name=template['name'],
@@ -254,7 +258,7 @@ def generate_coverage_plans(count: int = 5) -> List[CoveragePlan]:
                 'hospital_component': template['hospital_component'],
                 'extras_component': template['extras_component']
             },
-            effective_date=date.today() - timedelta(days=random.randint(30, 365))
+            effective_date=simulation_date - timedelta(days=random.randint(30, 365))
         )
         
         plans.append(plan)

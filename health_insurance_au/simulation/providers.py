@@ -73,17 +73,21 @@ def generate_provider_number() -> str:
     letter = random.choice(string.ascii_uppercase)
     return f"{digits}{letter}"
 
-def generate_providers(count: int = 50) -> List[Provider]:
+def generate_providers(count: int = 50, simulation_date: date = None) -> List[Provider]:
     """
     Generate a list of healthcare providers.
     
     Args:
         count: Number of providers to generate
+        simulation_date: The date to use for provider generation (default: today)
         
     Returns:
         A list of Provider objects
     """
     providers = []
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Determine distribution of provider types
     hospital_count = max(5, count // 10)
@@ -116,10 +120,12 @@ def generate_providers(count: int = 50) -> List[Provider]:
         agreement_start_date = None
         agreement_end_date = None
         if is_preferred:
-            agreement_start_date = date.today() - timedelta(days=random.randint(30, 730))
+            # Start date should be in the past relative to simulation date
+            agreement_start_date = simulation_date - timedelta(days=random.randint(30, 730))
             # 80% chance of ongoing agreement
             if random.random() < 0.8:
-                agreement_end_date = agreement_start_date + timedelta(days=random.randint(365, 1095))
+                # End date should be in the future relative to simulation date
+                agreement_end_date = simulation_date + timedelta(days=random.randint(30, 1095))
         
         # Create the provider
         provider = Provider(
@@ -164,10 +170,12 @@ def generate_providers(count: int = 50) -> List[Provider]:
         agreement_start_date = None
         agreement_end_date = None
         if is_preferred:
-            agreement_start_date = date.today() - timedelta(days=random.randint(30, 730))
+            # Start date should be in the past relative to simulation date
+            agreement_start_date = simulation_date - timedelta(days=random.randint(30, 730))
             # 60% chance of ongoing agreement
             if random.random() < 0.6:
-                agreement_end_date = agreement_start_date + timedelta(days=random.randint(365, 1095))
+                # End date should be in the future relative to simulation date
+                agreement_end_date = simulation_date + timedelta(days=random.randint(30, 1095))
         
         # Create the provider
         provider = Provider(
@@ -213,10 +221,12 @@ def generate_providers(count: int = 50) -> List[Provider]:
         agreement_start_date = None
         agreement_end_date = None
         if is_preferred:
-            agreement_start_date = date.today() - timedelta(days=random.randint(30, 730))
+            # Start date should be in the past relative to simulation date
+            agreement_start_date = simulation_date - timedelta(days=random.randint(30, 730))
             # 70% chance of ongoing agreement
             if random.random() < 0.7:
-                agreement_end_date = agreement_start_date + timedelta(days=random.randint(365, 1095))
+                # End date should be in the future relative to simulation date
+                agreement_end_date = simulation_date + timedelta(days=random.randint(30, 1095))
         
         # Create the provider
         provider = Provider(
@@ -262,10 +272,12 @@ def generate_providers(count: int = 50) -> List[Provider]:
         agreement_start_date = None
         agreement_end_date = None
         if is_preferred:
-            agreement_start_date = date.today() - timedelta(days=random.randint(30, 730))
+            # Start date should be in the past relative to simulation date
+            agreement_start_date = simulation_date - timedelta(days=random.randint(30, 730))
             # 50% chance of ongoing agreement
             if random.random() < 0.5:
-                agreement_end_date = agreement_start_date + timedelta(days=random.randint(365, 1095))
+                # End date should be in the future relative to simulation date
+                agreement_end_date = simulation_date + timedelta(days=random.randint(30, 1095))
         
         # Create the provider
         provider = Provider(

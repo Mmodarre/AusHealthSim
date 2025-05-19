@@ -82,18 +82,27 @@ GENERAL_TREATMENT_SERVICES = {
     ]
 }
 
-def generate_claim_number() -> str:
-    """Generate a random claim number."""
-    # Format: CL-YYYYMMDD-NNNNN where YYYYMMDD is the current date and NNNNN is a 5-digit number
-    today = date.today().strftime('%Y%m%d')
+def generate_claim_number(simulation_date: date = None) -> str:
+    """
+    Generate a random claim number.
+    
+    Args:
+        simulation_date: The date to use in the claim number (default: today)
+    
+    Returns:
+        A claim number in the format CL-YYYYMMDD-NNNNN
+    """
+    # Format: CL-YYYYMMDD-NNNNN where YYYYMMDD is the simulation date and NNNNN is a 5-digit number
+    date_str = simulation_date.strftime('%Y%m%d') if simulation_date else date.today().strftime('%Y%m%d')
     number = ''.join(random.choices(string.digits, k=5))
-    return f"CL-{today}-{number}"
+    return f"CL-{date_str}-{number}"
 
 def generate_hospital_claims(
     policies: List[Policy], 
     members: List[Member], 
     providers: List[Provider], 
-    count: int = 5
+    count: int = 5,
+    simulation_date: date = None
 ) -> List[Claim]:
     """
     Generate hospital claims.
@@ -103,11 +112,15 @@ def generate_hospital_claims(
         members: List of members
         providers: List of providers
         count: Number of claims to generate
+        simulation_date: The date to use for claim generation (default: today)
         
     Returns:
         A list of Claim objects
     """
     claims = []
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Filter for active policies
     active_policies = [p for p in policies if p.status == 'Active']
@@ -135,12 +148,13 @@ def generate_hospital_claims(
         # Select an MBS item
         mbs_item = random.choice(HOSPITAL_MBS_ITEMS)
         
-        # Generate service date (within the last year)
-        service_date_date = date.today() - timedelta(days=random.randint(1, 365))
+        # Generate service date (within the last 90 days from simulation date)
+        service_date_date = simulation_date - timedelta(days=random.randint(1, 90))
         service_date = generate_random_datetime(service_date_date)
         
-        # Generate submission date (a few days after service date)
-        submission_date_date = service_date_date + timedelta(days=random.randint(1, 10))
+        # Generate submission date (a few days after service date, but not after simulation date)
+        days_after_service = random.randint(1, 10)
+        submission_date_date = min(service_date_date + timedelta(days=days_after_service), simulation_date)
         submission_date = generate_random_datetime(submission_date_date)
         
         # Calculate charged amount (MBS fee plus a markup)
@@ -162,7 +176,7 @@ def generate_hospital_claims(
         gap_amount = max(0, round(charged_amount - medicare_amount - insurance_amount - excess_applied, 2))
         
         # Generate claim number
-        claim_number = generate_claim_number()
+        claim_number = generate_claim_number(simulation_date)
         
         # Determine claim status
         status = random.choices(
@@ -177,15 +191,28 @@ def generate_hospital_claims(
         rejection_reason = None
         
         if status in ['Approved', 'Paid']:
-            processed_date_date = submission_date_date + timedelta(days=random.randint(1, 14))
-            processed_date = generate_random_datetime(processed_date_date)
-            
-            if status == 'Paid':
-                payment_date_date = processed_date_date + timedelta(days=random.randint(1, 7))
-                payment_date = generate_random_datetime(payment_date_date)
+            # Processed date should be between submission date and simulation date
+            max_days_after_submission = max(0, (simulation_date - submission_date_date).days)
+            if max_days_after_submission > 0:
+                days_after_submission = random.randint(1, min(14, max_days_after_submission))
+                processed_date_date = submission_date_date + timedelta(days=days_after_submission)
+                processed_date = generate_random_datetime(processed_date_date)
+                
+                if status == 'Paid' and processed_date_date < simulation_date:
+                    # Payment date should be between processed date and simulation date
+                    max_days_after_processed = max(0, (simulation_date - processed_date_date).days)
+                    if max_days_after_processed > 0:
+                        days_after_processed = random.randint(1, min(7, max_days_after_processed))
+                        payment_date_date = processed_date_date + timedelta(days=days_after_processed)
+                        payment_date = generate_random_datetime(payment_date_date)
         elif status == 'Rejected':
-            processed_date_date = submission_date_date + timedelta(days=random.randint(1, 14))
-            processed_date = generate_random_datetime(processed_date_date)
+            # Processed date should be between submission date and simulation date
+            max_days_after_submission = max(0, (simulation_date - submission_date_date).days)
+            if max_days_after_submission > 0:
+                days_after_submission = random.randint(1, min(14, max_days_after_submission))
+                processed_date_date = submission_date_date + timedelta(days=days_after_submission)
+                processed_date = generate_random_datetime(processed_date_date)
+            
             rejection_reasons = [
                 'Service not covered by policy',
                 'Waiting period not served',
@@ -226,7 +253,8 @@ def generate_general_treatment_claims(
     policies: List[Policy], 
     members: List[Member], 
     providers: List[Provider], 
-    count: int = 15
+    count: int = 15,
+    simulation_date: date = None
 ) -> List[Claim]:
     """
     Generate general treatment claims (dental, optical, etc.).
@@ -236,11 +264,15 @@ def generate_general_treatment_claims(
         members: List of members
         providers: List of providers
         count: Number of claims to generate
+        simulation_date: The date to use for claim generation (default: today)
         
     Returns:
         A list of Claim objects
     """
     claims = []
+    
+    if simulation_date is None:
+        simulation_date = date.today()
     
     # Filter for active policies
     active_policies = [p for p in policies if p.status == 'Active']
@@ -280,12 +312,13 @@ def generate_general_treatment_claims(
             service_description = f"{claim_type} service"
             charged_amount = round(random.uniform(50, 300), 2)
         
-        # Generate service date (within the last year)
-        service_date_date = date.today() - timedelta(days=random.randint(1, 365))
+        # Generate service date (within the last 90 days from simulation date)
+        service_date_date = simulation_date - timedelta(days=random.randint(1, 90))
         service_date = generate_random_datetime(service_date_date)
         
-        # Generate submission date (a few days after service date)
-        submission_date_date = service_date_date + timedelta(days=random.randint(1, 10))
+        # Generate submission date (a few days after service date, but not after simulation date)
+        days_after_service = random.randint(1, 10)
+        submission_date_date = min(service_date_date + timedelta(days=days_after_service), simulation_date)
         submission_date = generate_random_datetime(submission_date_date)
         
         # Calculate insurance amount (typically a percentage of charged amount for extras)
@@ -302,7 +335,7 @@ def generate_general_treatment_claims(
         gap_amount = round(charged_amount - insurance_amount, 2)
         
         # Generate claim number
-        claim_number = generate_claim_number()
+        claim_number = generate_claim_number(simulation_date)
         
         # Determine claim status
         status = random.choices(
@@ -317,15 +350,28 @@ def generate_general_treatment_claims(
         rejection_reason = None
         
         if status in ['Approved', 'Paid']:
-            processed_date_date = submission_date_date + timedelta(days=random.randint(1, 7))
-            processed_date = generate_random_datetime(processed_date_date)
-            
-            if status == 'Paid':
-                payment_date_date = processed_date_date + timedelta(days=random.randint(1, 3))
-                payment_date = generate_random_datetime(payment_date_date)
+            # Processed date should be between submission date and simulation date
+            max_days_after_submission = max(0, (simulation_date - submission_date_date).days)
+            if max_days_after_submission > 0:
+                days_after_submission = random.randint(1, min(7, max_days_after_submission))
+                processed_date_date = submission_date_date + timedelta(days=days_after_submission)
+                processed_date = generate_random_datetime(processed_date_date)
+                
+                if status == 'Paid' and processed_date_date < simulation_date:
+                    # Payment date should be between processed date and simulation date
+                    max_days_after_processed = max(0, (simulation_date - processed_date_date).days)
+                    if max_days_after_processed > 0:
+                        days_after_processed = random.randint(1, min(3, max_days_after_processed))
+                        payment_date_date = processed_date_date + timedelta(days=days_after_processed)
+                        payment_date = generate_random_datetime(payment_date_date)
         elif status == 'Rejected':
-            processed_date_date = submission_date_date + timedelta(days=random.randint(1, 7))
-            processed_date = generate_random_datetime(processed_date_date)
+            # Processed date should be between submission date and simulation date
+            max_days_after_submission = max(0, (simulation_date - submission_date_date).days)
+            if max_days_after_submission > 0:
+                days_after_submission = random.randint(1, min(7, max_days_after_submission))
+                processed_date_date = submission_date_date + timedelta(days=days_after_submission)
+                processed_date = generate_random_datetime(processed_date_date)
+            
             rejection_reasons = [
                 'Service not covered by policy',
                 'Annual limit reached',
