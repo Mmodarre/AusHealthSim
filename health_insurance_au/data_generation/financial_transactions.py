@@ -86,11 +86,14 @@ class FinancialTransactionGenerator:
                 # Generate a transaction reference
                 reference = self._generate_payment_reference(simulation_date)
                 
+                # Ensure premium amount is a float
+                premium_amount = float(policy['CurrentPremium'])
+                
                 # Create a transaction
                 transaction = FinancialTransaction(
                     transaction_type="Premium Payment",
                     transaction_date=simulation_date,
-                    amount=policy['CurrentPremium'],
+                    amount=premium_amount,
                     description=f"Premium payment for policy {policy['PolicyNumber']}",
                     reference_number=reference,
                     related_entity_type="Policy",
@@ -176,7 +179,9 @@ class FinancialTransactionGenerator:
                     continue
                 
                 # Generate a refund amount (partial premium)
-                refund_amount = round(policy['CurrentPremium'] * random.uniform(0.1, 0.5), 2)
+                # Convert CurrentPremium to float to avoid decimal.Decimal multiplication issues
+                current_premium = float(policy['CurrentPremium'])
+                refund_amount = round(current_premium * random.uniform(0.1, 0.5), 2)
                 
                 # Generate a transaction reference
                 reference = self._generate_payment_reference(simulation_date)
@@ -221,7 +226,9 @@ class FinancialTransactionGenerator:
                     continue
                 
                 # Generate an adjustment amount (small percentage of premium)
-                adjustment_amount = round(policy['CurrentPremium'] * random.uniform(0.05, 0.15), 2)
+                # Convert CurrentPremium to float to avoid decimal.Decimal multiplication issues
+                current_premium = float(policy['CurrentPremium'])
+                adjustment_amount = round(current_premium * random.uniform(0.05, 0.15), 2)
                 
                 # Randomly decide if it's a positive or negative adjustment
                 if random.random() > 0.5:
@@ -319,7 +326,9 @@ class FinancialTransactionGenerator:
                     continue
                 
                 # Generate an interest amount (small percentage of premium)
-                interest_amount = round(policy['CurrentPremium'] * random.uniform(0.01, 0.03), 2)
+                # Convert CurrentPremium to float to avoid decimal.Decimal multiplication issues
+                current_premium = float(policy['CurrentPremium'])
+                interest_amount = round(current_premium * random.uniform(0.01, 0.03), 2)
                 
                 # Generate a transaction reference
                 reference = self._generate_payment_reference(simulation_date)
