@@ -4,9 +4,7 @@ Enhanced Realistic Health Insurance Simulation Script
 
 This script runs a simulation between a start and end date, generating realistic
 health insurance data with members joining, leaving, making claims, etc.
-
-This enhanced version includes fraud patterns, financial transactions, provider
-billing patterns, and actuarial metrics.
+It also enables the enhanced features for fraud detection, financial transactions, etc.
 """
 
 import argparse
@@ -123,80 +121,15 @@ def calculate_daily_parameters(base_members_count: int) -> Dict[str, Any]:
     
     return params
 
-def calculate_enhanced_parameters(simulation_date: date, active_members_count: int) -> Dict[str, Any]:
+def run_enhanced_realistic_simulation(start_date: date, end_date: date, base_members_per_day: int, use_dynamic_data: bool = True, log_level: str = 'INFO'):
     """
-    Calculate parameters for enhanced simulation features.
-    
-    Args:
-        simulation_date: The current simulation date
-        active_members_count: Number of active members
-        
-    Returns:
-        Dictionary of parameters for enhanced simulation
-    """
-    # Calculate day of month and day of week
-    day_of_month = simulation_date.day
-    day_of_week = simulation_date.weekday()
-    is_month_end = day_of_month >= 25 or day_of_month <= 3
-    is_weekend = day_of_week >= 5  # Saturday or Sunday
-    
-    # Base probabilities for different features
-    member_profile_prob = 0.3
-    policy_attribute_prob = 0.3
-    provider_billing_prob = 0.3
-    fraud_pattern_prob = 0.1  # Lower probability for fraud patterns
-    claim_pattern_prob = 0.4
-    financial_transaction_prob = 0.7
-    actuarial_metrics_prob = 0.1  # Only generate metrics occasionally
-    
-    # Adjust probabilities based on day of month/week
-    if is_month_end:
-        financial_transaction_prob = 0.9  # More transactions at month end
-        actuarial_metrics_prob = 0.5  # More metrics at month end
-    
-    if is_weekend:
-        member_profile_prob *= 0.5  # Less activity on weekends
-        policy_attribute_prob *= 0.5
-        provider_billing_prob *= 0.5
-    
-    # Calculate metrics count based on active members
-    metrics_count = max(20, int(active_members_count * 0.1))
-    claim_pattern_count = max(5, int(active_members_count * 0.05))
-    financial_transaction_count = max(10, int(active_members_count * 0.08))
-    
-    # Enhanced parameters
-    params = {
-        "generate_member_risk_profiles": random.random() < member_profile_prob,
-        "generate_policy_risk_attributes": random.random() < policy_attribute_prob,
-        "generate_provider_billing_attributes": random.random() < provider_billing_prob,
-        "apply_fraud_patterns": random.random() < fraud_pattern_prob,
-        "generate_claim_patterns": random.random() < claim_pattern_prob,
-        "generate_financial_transactions": random.random() < financial_transaction_prob,
-        "generate_actuarial_metrics": random.random() < actuarial_metrics_prob,
-        "actuarial_metrics_count": metrics_count,
-        "claim_pattern_count": claim_pattern_count,
-        "financial_transaction_count": financial_transaction_count
-    }
-    
-    return params
-
-def run_enhanced_realistic_simulation(
-    start_date: date, 
-    end_date: date, 
-    base_members_per_day: int, 
-    use_dynamic_data: bool = True, 
-    enable_enhanced: bool = True,
-    log_level: str = 'INFO'
-):
-    """
-    Run an enhanced realistic health insurance simulation between the specified dates.
+    Run a realistic health insurance simulation between the specified dates with enhanced features.
     
     Args:
         start_date: Start date for the simulation
         end_date: End date for the simulation
         base_members_per_day: Base number of new members per day
         use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
-        enable_enhanced: Whether to enable enhanced simulation features
         log_level: Logging level
     """
     # Configure logging
@@ -204,7 +137,6 @@ def run_enhanced_realistic_simulation(
     
     logger.info(f"Starting enhanced realistic simulation from {start_date} to {end_date}")
     logger.info(f"Base members per day: {base_members_per_day}")
-    logger.info(f"Enhanced features enabled: {enable_enhanced}")
     
     # Initialize the simulation
     simulation = HealthInsuranceSimulation()
@@ -261,32 +193,32 @@ def run_enhanced_realistic_simulation(
             claim_process_percentage=params["claim_process_percentage"]
         )
         
-        # Run enhanced simulation features if enabled
-        if enable_enhanced:
-            # Get active members count
-            active_members_count = get_active_members_count()
-            
-            # Calculate enhanced parameters
-            enhanced_params = calculate_enhanced_parameters(current_date, active_members_count)
-            
-            # Run enhanced simulation
-            logger.info(f"Running enhanced simulation features for {current_date}")
-            enhanced_results = run_enhanced_simulation(current_date, enhanced_params)
-            
-            # Log results
-            logger.info(f"Enhanced simulation results for {current_date}:")
-            logger.info(f"  Members updated: {enhanced_results.get('members_updated', 0)}")
-            logger.info(f"  Policies updated: {enhanced_results.get('policies_updated', 0)}")
-            logger.info(f"  Providers updated: {enhanced_results.get('providers_updated', 0)}")
-            logger.info(f"  Claims updated: {enhanced_results.get('claims_updated', 0)}")
-            logger.info(f"  Claim patterns generated: {enhanced_results.get('claim_patterns_generated', 0)}")
-            logger.info(f"  Financial transactions generated: {enhanced_results.get('financial_transactions_generated', 0)}")
-            logger.info(f"  Actuarial metrics generated: {enhanced_results.get('actuarial_metrics_generated', 0)}")
+        # Run enhanced simulation features
+        logger.info(f"Running enhanced simulation features for {current_date}")
+        
+        # Configure enhanced simulation
+        enhanced_config = {
+            'generate_member_risk_profiles': random.random() < 0.3,  # 30% chance
+            'generate_policy_risk_attributes': random.random() < 0.3,  # 30% chance
+            'generate_provider_billing_attributes': random.random() < 0.3,  # 30% chance
+            'apply_fraud_patterns': random.random() < 0.8,  # 80% chance
+            'generate_claim_patterns': True,  # Always generate claim patterns
+            'generate_financial_transactions': True,  # Always generate financial transactions
+            'generate_actuarial_metrics': current_date.day == 1,  # Only on the first day of the month
+            'actuarial_metrics_count': random.randint(30, 70),
+            'claim_pattern_count': random.randint(10, 30),
+            'financial_transaction_count': random.randint(20, 50)
+        }
+        
+        # Run enhanced simulation
+        enhanced_results = run_enhanced_simulation(current_date, enhanced_config)
+        
+        logger.info(f"Enhanced simulation results for {current_date}: {enhanced_results}")
         
         # Move to the next day
         current_date += timedelta(days=1)
     
-    logger.info(f"Simulation completed. Simulated {day_count} days from {start_date} to {end_date}")
+    logger.info(f"Enhanced simulation completed. Simulated {day_count} days from {start_date} to {end_date}")
 
 def main():
     """Main entry point for the script."""
@@ -298,7 +230,6 @@ def main():
     parser.add_argument('--log-level', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], default='INFO', help='Set the logging level')
     parser.add_argument('--reset-members', action='store_true', help='Reset the list of used member IDs before running')
     parser.add_argument('--use-static-data', action='store_true', help='Use static data from JSON file instead of dynamically generated data')
-    parser.add_argument('--disable-enhanced', action='store_true', help='Disable enhanced simulation features')
     
     args = parser.parse_args()
     
@@ -312,13 +243,12 @@ def main():
         reset_used_members()
         logger.info("Reset the list of used member IDs")
     
-    # Run the simulation
+    # Run the enhanced simulation
     run_enhanced_realistic_simulation(
         start_date=args.start_date,
         end_date=args.end_date,
         base_members_per_day=args.members_per_day,
         use_dynamic_data=not args.use_static_data,
-        enable_enhanced=not args.disable_enhanced,
         log_level=args.log_level
     )
 
