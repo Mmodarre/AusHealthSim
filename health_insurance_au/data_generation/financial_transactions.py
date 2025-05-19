@@ -128,11 +128,14 @@ class FinancialTransactionGenerator:
                 # Generate a transaction reference
                 reference = self._generate_payment_reference(simulation_date)
                 
+                # Ensure insurance amount is a float
+                insurance_amount = float(claim['InsuranceAmount'])
+                
                 # Create a transaction
                 transaction = FinancialTransaction(
                     transaction_type="Claim Payment",
                     transaction_date=simulation_date,
-                    amount=claim['InsuranceAmount'],
+                    amount=insurance_amount,
                     description=f"Claim payment for claim {claim['ClaimNumber']}",
                     reference_number=reference,
                     related_entity_type="Claim",
