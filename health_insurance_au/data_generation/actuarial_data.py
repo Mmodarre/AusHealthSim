@@ -1,269 +1,297 @@
 """
-Actuarial data generation module for the Health Insurance AU simulation.
+Actuarial data generator for enhanced simulation.
 """
+from datetime import date, datetime, timedelta
 import random
-from datetime import datetime, date, timedelta
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 
+from health_insurance_au.utils.db_utils import execute_query, execute_non_query, bulk_insert
 from health_insurance_au.models.models import ActuarialMetric
-from health_insurance_au.utils.db_utils import execute_query, bulk_insert
-from health_insurance_au.utils.logging_config import get_logger
-
-# Set up logging
-logger = get_logger(__name__)
 
 class ActuarialDataGenerator:
-    """
-    Class for generating actuarial metrics and cost data.
-    """
+    """Generator for actuarial metrics."""
     
     def __init__(self):
         """Initialize the actuarial data generator."""
-        # Define metric types and their characteristics
-        self.metric_types = {
-            'Loss Ratio': {
-                'value_range': (0.6, 1.1),
-                'trend_factor': 0.01,  # Annual trend
-                'seasonality': {
-                    1: 0.02,   # January: higher
-                    2: 0.01,   # February
-                    3: 0.0,    # March
-                    4: -0.01,  # April
-                    5: -0.02,  # May
-                    6: -0.03,  # June: lower (end of financial year)
-                    7: 0.03,   # July: higher (start of financial year)
-                    8: 0.02,   # August
-                    9: 0.01,   # September
-                    10: 0.0,   # October
-                    11: -0.01, # November
-                    12: 0.02   # December: higher
-                }
-            },
-            'Lapse Rate': {
-                'value_range': (0.05, 0.2),
-                'trend_factor': 0.005,
-                'seasonality': {
-                    1: 0.03,   # January: higher
-                    2: 0.02,   # February
-                    3: 0.01,   # March
-                    4: 0.0,    # April
-                    5: -0.01,  # May
-                    6: -0.02,  # June
-                    7: 0.04,   # July: higher (price changes)
-                    8: 0.02,   # August
-                    9: 0.0,    # September
-                    10: -0.01, # October
-                    11: -0.02, # November
-                    12: -0.01  # December
-                }
-            },
-            'Acquisition Cost': {
-                'value_range': (150.0, 400.0),
-                'trend_factor': 10.0,  # Annual increase
-                'seasonality': {
-                    1: 0.05,   # January: higher
-                    2: 0.03,   # February
-                    3: 0.01,   # March
-                    4: 0.0,    # April
-                    5: -0.01,  # May
-                    6: 0.03,   # June: higher (end of financial year)
-                    7: -0.02,  # July
-                    8: -0.01,  # August
-                    9: 0.0,    # September
-                    10: 0.01,  # October
-                    11: 0.02,  # November
-                    12: 0.03   # December: higher
-                }
-            },
-            'Retention Cost': {
-                'value_range': (50.0, 120.0),
-                'trend_factor': 5.0,
-                'seasonality': {
-                    1: 0.01,   # January
-                    2: 0.0,    # February
-                    3: 0.0,    # March
-                    4: 0.01,   # April
-                    5: 0.02,   # May
-                    6: 0.03,   # June: higher (end of financial year)
-                    7: -0.01,  # July
-                    8: -0.01,  # August
-                    9: 0.0,    # September
-                    10: 0.0,   # October
-                    11: 0.01,  # November
-                    12: 0.02   # December
-                }
-            },
-            'Claims Frequency': {
-                'value_range': (1.5, 4.0),
-                'trend_factor': 0.1,
-                'seasonality': {
-                    1: 0.0,    # January
-                    2: 0.01,   # February
-                    3: 0.02,   # March
-                    4: 0.03,   # April
-                    5: 0.04,   # May
-                    6: 0.05,   # June: higher (end of financial year)
-                    7: -0.02,  # July
-                    8: -0.01,  # August
-                    9: 0.0,    # September
-                    10: 0.01,  # October
-                    11: 0.02,  # November
-                    12: 0.03   # December
-                }
-            }
-        }
-        
-        # Define categories
-        self.categories = {
-            'Hospital': ['Basic', 'Bronze', 'Silver', 'Gold'],
-            'Extras': ['Basic', 'Medium', 'Top'],
-            'Combined': ['Basic', 'Bronze', 'Silver', 'Gold']
-        }
-        
-        # Define age groups
-        self.age_groups = ['18-30', '31-50', '51-70', '71+']
-        
-        # Define genders
-        self.genders = ['M', 'F']
-        
-        # Define states/territories
-        self.states = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'NT', 'ACT']
-        
-        # Define risk segments
-        self.risk_segments = ['Very Low', 'Low', 'Medium', 'High', 'Very High']
+        pass
     
-    def generate_monthly_metrics(self, metric_date: date, num_metrics: int = 100) -> List[ActuarialMetric]:
+    def generate_metrics(self, simulation_date: date) -> Dict[str, int]:
         """
-        Generate monthly actuarial metrics.
+        Generate actuarial metrics.
         
         Args:
-            metric_date: The date for the metrics
-            num_metrics: Number of metrics to generate
+            simulation_date: The simulation date
             
         Returns:
-            A list of ActuarialMetric objects
+            Dictionary with statistics about generated metrics
         """
+        # Only generate metrics on the last day of the month
+        if not self._is_last_day_of_month(simulation_date):
+            return {'metrics_generated': 0}
+        
+        # Get aggregated data for metrics
+        aggregated_data = self._get_aggregated_data(simulation_date)
+        
+        # Generate metrics
         metrics = []
         
-        # Calculate years since 2020 for trend calculation
-        years_since_base = (metric_date.year - 2020) + (metric_date.month / 12.0)
+        # Generate loss ratio metrics
+        loss_ratio_metrics = self._generate_loss_ratio_metrics(aggregated_data, simulation_date)
+        metrics.extend(loss_ratio_metrics)
         
-        for _ in range(num_metrics):
-            # Select random attributes
-            metric_type = random.choice(list(self.metric_types.keys()))
-            category_type = random.choice(list(self.categories.keys()))
-            product_category = random.choice(self.categories[category_type])
+        # Generate lapse rate metrics
+        lapse_rate_metrics = self._generate_lapse_rate_metrics(aggregated_data, simulation_date)
+        metrics.extend(lapse_rate_metrics)
+        
+        # Generate acquisition cost metrics
+        acquisition_cost_metrics = self._generate_acquisition_cost_metrics(aggregated_data, simulation_date)
+        metrics.extend(acquisition_cost_metrics)
+        
+        # Insert metrics into the database
+        metrics_inserted = 0
+        if metrics:
+            metric_dicts = [m.to_dict() for m in metrics]
+            metrics_inserted = bulk_insert("Insurance.ActuarialMetrics", metric_dicts)
+        
+        return {
+            'metrics_generated': metrics_inserted
+        }
+    
+    def _is_last_day_of_month(self, check_date: date) -> bool:
+        """Check if a date is the last day of the month."""
+        next_day = check_date + timedelta(days=1)
+        return check_date.month != next_day.month
+    
+    def _get_aggregated_data(self, simulation_date: date) -> List[Dict[str, Any]]:
+        """Get aggregated data for metrics from the database."""
+        try:
+            # Get data for the current month
+            start_date = date(simulation_date.year, simulation_date.month, 1)
             
-            # Decide whether to include demographic breakdowns
-            include_demographics = random.random() < 0.7  # 70% chance
+            query = """
+            SELECT 
+                CASE 
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) < 18 THEN 'Under 18'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 18 AND 30 THEN '18-30'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 31 AND 50 THEN '31-50'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 51 AND 70 THEN '51-70'
+                    ELSE '71+'
+                END AS AgeGroup,
+                m.Gender,
+                m.State AS StateTerritory,
+                CASE 
+                    WHEN cp.HospitalTier = 'Gold' THEN 'Gold'
+                    WHEN cp.HospitalTier = 'Silver' THEN 'Silver'
+                    WHEN cp.HospitalTier = 'Bronze' THEN 'Bronze'
+                    WHEN cp.HospitalTier = 'Basic' THEN 'Basic'
+                    ELSE 'Other'
+                END AS ProductCategory,
+                SUM(pp.PaymentAmount) AS TotalPremiums,
+                SUM(c.InsuranceAmount) AS TotalClaims,
+                COUNT(DISTINCT m.MemberID) AS MemberCount
+            FROM Insurance.Members m
+            JOIN Insurance.PolicyMembers pm ON m.MemberID = pm.MemberID
+            JOIN Insurance.Policies p ON pm.PolicyID = p.PolicyID
+            JOIN Insurance.CoveragePlans cp ON p.PlanID = cp.PlanID
+            LEFT JOIN Insurance.PremiumPayments pp ON p.PolicyID = pp.PolicyID AND pp.PaymentDate BETWEEN ? AND ?
+            LEFT JOIN Insurance.Claims c ON m.MemberID = c.MemberID AND c.ServiceDate BETWEEN ? AND ?
+            WHERE p.Status = 'Active'
+            GROUP BY 
+                CASE 
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) < 18 THEN 'Under 18'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 18 AND 30 THEN '18-30'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 31 AND 50 THEN '31-50'
+                    WHEN DATEDIFF(YEAR, m.DateOfBirth, GETDATE()) BETWEEN 51 AND 70 THEN '51-70'
+                    ELSE '71+'
+                END,
+                m.Gender,
+                m.State,
+                CASE 
+                    WHEN cp.HospitalTier = 'Gold' THEN 'Gold'
+                    WHEN cp.HospitalTier = 'Silver' THEN 'Silver'
+                    WHEN cp.HospitalTier = 'Bronze' THEN 'Bronze'
+                    WHEN cp.HospitalTier = 'Basic' THEN 'Basic'
+                    ELSE 'Other'
+                END
+            """
+            return execute_query(query, (start_date, simulation_date, start_date, simulation_date))
+        except Exception as e:
+            print(f"Error getting aggregated data: {e}")
+            return []
+    
+    def _generate_loss_ratio_metrics(self, aggregated_data: List[Dict[str, Any]], simulation_date: date) -> List[ActuarialMetric]:
+        """Generate loss ratio metrics."""
+        metrics = []
+        
+        for data in aggregated_data:
+            total_premiums = data.get('TotalPremiums', 0) or 0
+            total_claims = data.get('TotalClaims', 0) or 0
             
-            if include_demographics:
-                age_group = random.choice(self.age_groups)
-                gender = random.choice(self.genders)
-                state = random.choice(self.states)
-                risk_segment = random.choice(self.risk_segments)
-            else:
-                age_group = None
-                gender = None
-                state = None
-                risk_segment = None
+            # Skip if no premiums
+            if total_premiums == 0:
+                continue
             
-            # Get base value range and apply trends and seasonality
-            min_value, max_value = self.metric_types[metric_type]['value_range']
-            trend = self.metric_types[metric_type]['trend_factor'] * years_since_base
-            seasonality = self.metric_types[metric_type]['seasonality'].get(metric_date.month, 0.0)
+            # Calculate loss ratio
+            loss_ratio = total_claims / total_premiums if total_premiums > 0 else 0
             
-            # Adjust range based on trend and seasonality
-            adjusted_min = min_value * (1 + trend + seasonality)
-            adjusted_max = max_value * (1 + trend + seasonality)
+            # Add some random variation
+            loss_ratio += random.uniform(-0.05, 0.05)
+            loss_ratio = max(0.0, min(1.5, loss_ratio))
             
-            # Further adjust based on product category
-            if product_category == 'Gold':
-                category_factor = 1.2
-            elif product_category == 'Silver':
-                category_factor = 1.1
-            elif product_category == 'Bronze':
-                category_factor = 1.0
-            else:  # Basic
-                category_factor = 0.9
-                
-            adjusted_min *= category_factor
-            adjusted_max *= category_factor
+            # Determine risk segment
+            risk_segment = self._determine_risk_segment(loss_ratio)
             
-            # Generate the value
-            metric_value = round(random.uniform(adjusted_min, adjusted_max), 4)
-            
-            # Create the metric
+            # Create metric
             metric = ActuarialMetric(
-                metric_date=metric_date,
-                metric_type=metric_type,
-                metric_category=category_type,
-                metric_value=metric_value,
-                age_group=age_group,
-                gender=gender,
-                state_territory=state,
-                product_category=product_category,
+                metric_date=simulation_date,
+                metric_type="Loss Ratio",
+                metric_category="Hospital",
+                metric_value=loss_ratio,
+                age_group=data.get('AgeGroup'),
+                gender=data.get('Gender'),
+                state_territory=data.get('StateTerritory'),
+                product_category=data.get('ProductCategory'),
                 risk_segment=risk_segment
             )
             
             metrics.append(metric)
         
-        logger.info(f"Generated {len(metrics)} actuarial metrics for {metric_date}")
         return metrics
     
-    def save_metrics(self, metrics: List[ActuarialMetric], simulation_date: date = None) -> int:
-        """
-        Save actuarial metrics to the database.
+    def _generate_lapse_rate_metrics(self, aggregated_data: List[Dict[str, Any]], simulation_date: date) -> List[ActuarialMetric]:
+        """Generate lapse rate metrics."""
+        metrics = []
         
-        Args:
-            metrics: List of metrics to save
-            simulation_date: The simulation date
+        for data in aggregated_data:
+            # Generate a realistic lapse rate based on age group and product category
+            base_lapse_rate = 0.1  # 10% base lapse rate
             
-        Returns:
-            Number of metrics saved
-        """
-        if not metrics:
-            return 0
+            # Adjust based on age group
+            age_group = data.get('AgeGroup')
+            if age_group == '18-30':
+                base_lapse_rate += 0.05  # Higher for younger members
+            elif age_group == '71+':
+                base_lapse_rate -= 0.05  # Lower for older members
             
-        if simulation_date is None:
-            simulation_date = date.today()
+            # Adjust based on product category
+            product_category = data.get('ProductCategory')
+            if product_category == 'Gold':
+                base_lapse_rate -= 0.03  # Lower for premium products
+            elif product_category == 'Basic':
+                base_lapse_rate += 0.03  # Higher for basic products
+            
+            # Add some random variation
+            lapse_rate = base_lapse_rate + random.uniform(-0.02, 0.02)
+            lapse_rate = max(0.01, min(0.3, lapse_rate))
+            
+            # Create metric
+            metric = ActuarialMetric(
+                metric_date=simulation_date,
+                metric_type="Lapse Rate",
+                metric_category="Hospital",
+                metric_value=lapse_rate,
+                age_group=data.get('AgeGroup'),
+                gender=data.get('Gender'),
+                state_territory=data.get('StateTerritory'),
+                product_category=data.get('ProductCategory'),
+                risk_segment=self._determine_risk_segment(lapse_rate, inverse=True)
+            )
+            
+            metrics.append(metric)
         
-        metric_dicts = [metric.to_dict() for metric in metrics]
-        
-        try:
-            rows_affected = bulk_insert("Insurance.ActuarialMetrics", metric_dicts, simulation_date)
-            logger.info(f"Saved {rows_affected} actuarial metrics to database")
-            return rows_affected
-        except Exception as e:
-            logger.error(f"Error saving actuarial metrics: {e}")
-            return 0
+        return metrics
     
-    def generate_historical_metrics(self, start_date: date, end_date: date, metrics_per_month: int = 50) -> List[ActuarialMetric]:
+    def _generate_acquisition_cost_metrics(self, aggregated_data: List[Dict[str, Any]], simulation_date: date) -> List[ActuarialMetric]:
+        """Generate acquisition cost metrics."""
+        metrics = []
+        
+        # Get unique combinations of age group and product category
+        age_product_combinations = set()
+        for data in aggregated_data:
+            age_group = data.get('AgeGroup')
+            product_category = data.get('ProductCategory')
+            if age_group and product_category:
+                age_product_combinations.add((age_group, product_category))
+        
+        for age_group, product_category in age_product_combinations:
+            # Generate acquisition cost
+            base_cost = 300  # Base acquisition cost
+            
+            # Adjust based on age group
+            if age_group == '18-30':
+                base_cost += 50  # Higher for younger members
+            elif age_group == '71+':
+                base_cost -= 50  # Lower for older members
+            
+            # Adjust based on product category
+            if product_category == 'Gold':
+                base_cost += 100  # Higher for premium products
+            elif product_category == 'Basic':
+                base_cost -= 100  # Lower for basic products
+            
+            # Add some random variation
+            acquisition_cost = base_cost + random.uniform(-30, 30)
+            acquisition_cost = max(100, acquisition_cost)
+            
+            # Create metric
+            metric = ActuarialMetric(
+                metric_date=simulation_date,
+                metric_type="Acquisition Cost",
+                metric_category="Hospital",
+                metric_value=acquisition_cost,
+                age_group=age_group,
+                product_category=product_category
+            )
+            
+            metrics.append(metric)
+            
+            # Also generate retention cost (typically lower than acquisition cost)
+            retention_cost = acquisition_cost * random.uniform(0.2, 0.4)
+            
+            # Create retention cost metric
+            metric = ActuarialMetric(
+                metric_date=simulation_date,
+                metric_type="Retention Cost",
+                metric_category="Hospital",
+                metric_value=retention_cost,
+                age_group=age_group,
+                product_category=product_category
+            )
+            
+            metrics.append(metric)
+        
+        return metrics
+    
+    def _determine_risk_segment(self, value: float, inverse: bool = False) -> str:
         """
-        Generate historical actuarial metrics over a date range.
+        Determine the risk segment based on a value.
         
         Args:
-            start_date: The start date
-            end_date: The end date
-            metrics_per_month: Number of metrics to generate per month
+            value: The value to evaluate
+            inverse: If True, lower values are higher risk
             
         Returns:
-            A list of ActuarialMetric objects
+            Risk segment as a string
         """
-        all_metrics = []
-        
-        # Generate metrics for each month in the range
-        current_date = date(start_date.year, start_date.month, 1)  # Start at first of the month
-        
-        while current_date <= end_date:
-            monthly_metrics = self.generate_monthly_metrics(current_date, metrics_per_month)
-            all_metrics.extend(monthly_metrics)
-            
-            # Move to next month
-            if current_date.month == 12:
-                current_date = date(current_date.year + 1, 1, 1)
+        if inverse:
+            if value < 0.05:
+                return "Very Low"
+            elif value < 0.1:
+                return "Low"
+            elif value < 0.15:
+                return "Medium"
+            elif value < 0.2:
+                return "High"
             else:
-                current_date = date(current_date.year, current_date.month + 1, 1)
-        
-        logger.info(f"Generated {len(all_metrics)} historical actuarial metrics from {start_date} to {end_date}")
-        return all_metrics
+                return "Very High"
+        else:
+            if value < 0.7:
+                return "Very Low"
+            elif value < 0.8:
+                return "Low"
+            elif value < 0.9:
+                return "Medium"
+            elif value < 1.0:
+                return "High"
+            else:
+                return "Very High"

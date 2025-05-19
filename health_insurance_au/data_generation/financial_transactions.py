@@ -1,286 +1,360 @@
 """
-Financial transaction generation module for the Health Insurance AU simulation.
+Financial transaction generator for enhanced simulation.
 """
+from datetime import date, datetime, timedelta
 import random
 import string
-from datetime import datetime, date, timedelta
-from typing import List, Dict, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 
-from health_insurance_au.models.models import FinancialTransaction, Policy, Claim
-from health_insurance_au.utils.db_utils import bulk_insert
-from health_insurance_au.utils.logging_config import get_logger
-
-# Set up logging
-logger = get_logger(__name__)
+from health_insurance_au.utils.db_utils import execute_query, execute_non_query, bulk_insert
+from health_insurance_au.models.models import FinancialTransaction
 
 class FinancialTransactionGenerator:
-    """
-    Class for generating financial transactions.
-    """
+    """Generator for financial transactions."""
     
     def __init__(self):
         """Initialize the financial transaction generator."""
-        self.transaction_types = {
-            'Premium': {
-                'description_templates': [
-                    "Premium payment for policy {policy_number}",
-                    "Monthly premium for policy {policy_number}",
-                    "Quarterly premium for policy {policy_number}",
-                    "Annual premium for policy {policy_number}"
-                ],
-                'amount_range': (100.0, 800.0),
-                'entity_type': 'Policy'
-            },
-            'ClaimPayment': {
-                'description_templates': [
-                    "Claim payment for claim {claim_number}",
-                    "Benefit payment for claim {claim_number}",
-                    "Provider payment for claim {claim_number}"
-                ],
-                'amount_range': (50.0, 3000.0),
-                'entity_type': 'Claim'
-            },
-            'Refund': {
-                'description_templates': [
-                    "Premium refund for policy {policy_number}",
-                    "Overpayment refund for policy {policy_number}",
-                    "Cancellation refund for policy {policy_number}"
-                ],
-                'amount_range': (20.0, 500.0),
-                'entity_type': 'Policy'
-            },
-            'Adjustment': {
-                'description_templates': [
-                    "Premium adjustment for policy {policy_number}",
-                    "Rate adjustment for policy {policy_number}",
-                    "Coverage change adjustment for policy {policy_number}"
-                ],
-                'amount_range': (10.0, 200.0),
-                'entity_type': 'Policy'
-            },
-            'Fee': {
-                'description_templates': [
-                    "Administrative fee for policy {policy_number}",
-                    "Late payment fee for policy {policy_number}",
-                    "Processing fee for policy {policy_number}"
-                ],
-                'amount_range': (5.0, 50.0),
-                'entity_type': 'Policy'
-            }
+        pass
+    
+    def generate_transactions(self, simulation_date: date, detail_level: int = 2) -> Dict[str, int]:
+        """
+        Generate financial transactions.
+        
+        Args:
+            simulation_date: The simulation date
+            detail_level: The level of detail for transactions (1-3)
+            
+        Returns:
+            Dictionary with statistics about generated transactions
+        """
+        transactions = []
+        
+        # Generate premium payment transactions
+        premium_transactions = self._generate_premium_transactions(simulation_date)
+        transactions.extend(premium_transactions)
+        
+        # Generate claim payment transactions
+        claim_transactions = self._generate_claim_transactions(simulation_date)
+        transactions.extend(claim_transactions)
+        
+        # If detail level is higher, generate more transaction types
+        if detail_level >= 2:
+            # Generate refund transactions
+            refund_transactions = self._generate_refund_transactions(simulation_date)
+            transactions.extend(refund_transactions)
+            
+            # Generate adjustment transactions
+            adjustment_transactions = self._generate_adjustment_transactions(simulation_date)
+            transactions.extend(adjustment_transactions)
+        
+        # If detail level is highest, generate even more transaction types
+        if detail_level >= 3:
+            # Generate fee transactions
+            fee_transactions = self._generate_fee_transactions(simulation_date)
+            transactions.extend(fee_transactions)
+            
+            # Generate interest transactions
+            interest_transactions = self._generate_interest_transactions(simulation_date)
+            transactions.extend(interest_transactions)
+        
+        # Insert transactions into the database
+        if transactions:
+            transaction_dicts = [t.to_dict() for t in transactions]
+            rows_affected = bulk_insert("Insurance.FinancialTransactions", transaction_dicts)
+        else:
+            rows_affected = 0
+        
+        return {
+            'transactions_generated': rows_affected
         }
     
-    def _generate_reference_number(self, transaction_type: str, simulation_date: date) -> str:
-        """
-        Generate a reference number for a transaction.
-        
-        Args:
-            transaction_type: The type of transaction
-            simulation_date: The simulation date
-            
-        Returns:
-            A reference number string
-        """
-        date_str = simulation_date.strftime('%Y%m%d')
-        random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        
-        if transaction_type == 'Premium':
-            prefix = 'PMT'
-        elif transaction_type == 'ClaimPayment':
-            prefix = 'CLM'
-        elif transaction_type == 'Refund':
-            prefix = 'RFD'
-        elif transaction_type == 'Adjustment':
-            prefix = 'ADJ'
-        elif transaction_type == 'Fee':
-            prefix = 'FEE'
-        else:
-            prefix = 'TXN'
-            
-        return f"{prefix}-{date_str}-{random_chars}"
-    
-    def generate_premium_transactions(self, policies: List[Policy], simulation_date: date = None) -> List[FinancialTransaction]:
-        """
-        Generate premium payment transactions.
-        
-        Args:
-            policies: List of policies to generate transactions for
-            simulation_date: The simulation date
-            
-        Returns:
-            A list of FinancialTransaction objects
-        """
-        if simulation_date is None:
-            simulation_date = date.today()
-        
+    def _generate_premium_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate premium payment transactions."""
         transactions = []
         
-        # Select a subset of policies for transactions
-        transaction_count = max(1, int(len(policies) * 0.2))  # 20% of policies
-        selected_policies = random.sample(policies, min(transaction_count, len(policies)))
-        
-        for policy in selected_policies:
-            transaction_type = 'Premium'
-            policy_number = policy.policy_number
-            policy_id = getattr(policy, 'policy_id', 0)
-            
-            # Generate transaction details
-            description_template = random.choice(self.transaction_types[transaction_type]['description_templates'])
-            description = description_template.format(policy_number=policy_number)
-            
-            amount = policy.current_premium
-            reference_number = self._generate_reference_number(transaction_type, simulation_date)
-            
-            # Create the transaction
-            transaction = FinancialTransaction(
-                transaction_type=transaction_type,
-                transaction_date=simulation_date,
-                amount=amount,
-                description=description,
-                reference_number=reference_number,
-                related_entity_type=self.transaction_types[transaction_type]['entity_type'],
-                related_entity_id=policy_id,
-                processed_date=datetime.combine(simulation_date, datetime.min.time()),
-                status='Completed',
-                created_by='System',
-                created_date=datetime.combine(simulation_date, datetime.min.time()),
-                last_modified=datetime.combine(simulation_date, datetime.min.time())
-            )
-            
-            transactions.append(transaction)
-        
-        logger.info(f"Generated {len(transactions)} premium transactions")
-        return transactions
-    
-    def generate_claim_payment_transactions(self, claims: List[Claim], simulation_date: date = None) -> List[FinancialTransaction]:
-        """
-        Generate claim payment transactions.
-        
-        Args:
-            claims: List of claims to generate transactions for
-            simulation_date: The simulation date
-            
-        Returns:
-            A list of FinancialTransaction objects
-        """
-        if simulation_date is None:
-            simulation_date = date.today()
-        
-        transactions = []
-        
-        # Filter claims that are in 'Approved' or 'Paid' status
-        eligible_claims = [claim for claim in claims if claim.status in ['Approved', 'Paid']]
-        
-        for claim in eligible_claims:
-            transaction_type = 'ClaimPayment'
-            claim_number = claim.claim_number
-            claim_id = getattr(claim, 'claim_id', 0)
-            
-            # Generate transaction details
-            description_template = random.choice(self.transaction_types[transaction_type]['description_templates'])
-            description = description_template.format(claim_number=claim_number)
-            
-            amount = claim.insurance_amount
-            reference_number = self._generate_reference_number(transaction_type, simulation_date)
-            
-            # Create the transaction
-            transaction = FinancialTransaction(
-                transaction_type=transaction_type,
-                transaction_date=simulation_date,
-                amount=amount,
-                description=description,
-                reference_number=reference_number,
-                related_entity_type=self.transaction_types[transaction_type]['entity_type'],
-                related_entity_id=claim_id,
-                processed_date=datetime.combine(simulation_date, datetime.min.time()),
-                status='Completed',
-                created_by='System',
-                created_date=datetime.combine(simulation_date, datetime.min.time()),
-                last_modified=datetime.combine(simulation_date, datetime.min.time())
-            )
-            
-            transactions.append(transaction)
-        
-        logger.info(f"Generated {len(transactions)} claim payment transactions")
-        return transactions
-    
-    def generate_miscellaneous_transactions(self, policies: List[Policy], simulation_date: date = None, count: int = 10) -> List[FinancialTransaction]:
-        """
-        Generate miscellaneous transactions (refunds, adjustments, fees).
-        
-        Args:
-            policies: List of policies to generate transactions for
-            simulation_date: The simulation date
-            count: Number of transactions to generate
-            
-        Returns:
-            A list of FinancialTransaction objects
-        """
-        if simulation_date is None:
-            simulation_date = date.today()
-        
-        transactions = []
-        
-        # Select random policies for transactions
-        selected_policies = random.sample(policies, min(count, len(policies)))
-        
-        for policy in selected_policies:
-            # Select a random transaction type
-            transaction_type = random.choice(['Refund', 'Adjustment', 'Fee'])
-            policy_number = policy.policy_number
-            policy_id = getattr(policy, 'policy_id', 0)
-            
-            # Generate transaction details
-            description_template = random.choice(self.transaction_types[transaction_type]['description_templates'])
-            description = description_template.format(policy_number=policy_number)
-            
-            min_amount, max_amount = self.transaction_types[transaction_type]['amount_range']
-            amount = round(random.uniform(min_amount, max_amount), 2)
-            reference_number = self._generate_reference_number(transaction_type, simulation_date)
-            
-            # Create the transaction
-            transaction = FinancialTransaction(
-                transaction_type=transaction_type,
-                transaction_date=simulation_date,
-                amount=amount,
-                description=description,
-                reference_number=reference_number,
-                related_entity_type=self.transaction_types[transaction_type]['entity_type'],
-                related_entity_id=policy_id,
-                processed_date=datetime.combine(simulation_date, datetime.min.time()),
-                status='Completed',
-                created_by='System',
-                created_date=datetime.combine(simulation_date, datetime.min.time()),
-                last_modified=datetime.combine(simulation_date, datetime.min.time())
-            )
-            
-            transactions.append(transaction)
-        
-        logger.info(f"Generated {len(transactions)} miscellaneous transactions")
-        return transactions
-    
-    def save_transactions(self, transactions: List[FinancialTransaction], simulation_date: date = None) -> int:
-        """
-        Save transactions to the database.
-        
-        Args:
-            transactions: List of transactions to save
-            simulation_date: The simulation date
-            
-        Returns:
-            Number of transactions saved
-        """
-        if not transactions:
-            return 0
-            
-        if simulation_date is None:
-            simulation_date = date.today()
-        
-        transaction_dicts = [transaction.to_dict() for transaction in transactions]
-        
+        # Get policies with premium due dates on or before the simulation date
         try:
-            rows_affected = bulk_insert("Insurance.FinancialTransactions", transaction_dicts, simulation_date)
-            logger.info(f"Saved {rows_affected} transactions to database")
-            return rows_affected
+            query = """
+            SELECT p.PolicyID, p.PolicyNumber, p.CurrentPremium, p.PaymentMethod
+            FROM Insurance.Policies p
+            WHERE p.Status = 'Active'
+            AND p.NextPremiumDueDate <= ?
+            """
+            policies = execute_query(query, (simulation_date,))
+            
+            for policy in policies:
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Premium Payment",
+                    transaction_date=simulation_date,
+                    amount=policy['CurrentPremium'],
+                    description=f"Premium payment for policy {policy['PolicyNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Policy",
+                    related_entity_id=policy['PolicyID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
         except Exception as e:
-            logger.error(f"Error saving transactions: {e}")
-            return 0
+            print(f"Error generating premium transactions: {e}")
+        
+        return transactions
+    
+    def _generate_claim_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate claim payment transactions."""
+        transactions = []
+        
+        # Get approved claims that haven't been paid yet
+        try:
+            query = """
+            SELECT c.ClaimID, c.ClaimNumber, c.InsuranceAmount, p.PolicyNumber
+            FROM Insurance.Claims c
+            JOIN Insurance.Policies p ON c.PolicyID = p.PolicyID
+            WHERE c.Status = 'Approved'
+            AND c.PaymentDate IS NULL
+            """
+            claims = execute_query(query)
+            
+            for claim in claims:
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Claim Payment",
+                    transaction_date=simulation_date,
+                    amount=claim['InsuranceAmount'],
+                    description=f"Claim payment for claim {claim['ClaimNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Claim",
+                    related_entity_id=claim['ClaimID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
+                
+                # Update the claim with payment date
+                try:
+                    update_query = """
+                    UPDATE Insurance.Claims
+                    SET PaymentDate = ?, Status = 'Paid', LastModified = ?
+                    WHERE ClaimID = ?
+                    """
+                    execute_non_query(update_query, (simulation_date, simulation_date, claim['ClaimID']))
+                except Exception as e:
+                    print(f"Error updating claim {claim['ClaimID']}: {e}")
+        except Exception as e:
+            print(f"Error generating claim transactions: {e}")
+        
+        return transactions
+    
+    def _generate_refund_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate refund transactions."""
+        transactions = []
+        
+        # Get a small random subset of policies for refunds
+        try:
+            query = """
+            SELECT TOP 5 p.PolicyID, p.PolicyNumber, p.CurrentPremium
+            FROM Insurance.Policies p
+            WHERE p.Status = 'Active'
+            ORDER BY NEWID()
+            """
+            policies = execute_query(query)
+            
+            for policy in policies:
+                # Only generate refunds for a small percentage of policies
+                if random.random() > 0.2:
+                    continue
+                
+                # Generate a refund amount (partial premium)
+                refund_amount = round(policy['CurrentPremium'] * random.uniform(0.1, 0.5), 2)
+                
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Refund",
+                    transaction_date=simulation_date,
+                    amount=refund_amount,
+                    description=f"Premium refund for policy {policy['PolicyNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Policy",
+                    related_entity_id=policy['PolicyID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
+        except Exception as e:
+            print(f"Error generating refund transactions: {e}")
+        
+        return transactions
+    
+    def _generate_adjustment_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate adjustment transactions."""
+        transactions = []
+        
+        # Get a small random subset of policies for adjustments
+        try:
+            query = """
+            SELECT TOP 5 p.PolicyID, p.PolicyNumber, p.CurrentPremium
+            FROM Insurance.Policies p
+            WHERE p.Status = 'Active'
+            ORDER BY NEWID()
+            """
+            policies = execute_query(query)
+            
+            for policy in policies:
+                # Only generate adjustments for a small percentage of policies
+                if random.random() > 0.2:
+                    continue
+                
+                # Generate an adjustment amount (small percentage of premium)
+                adjustment_amount = round(policy['CurrentPremium'] * random.uniform(0.05, 0.15), 2)
+                
+                # Randomly decide if it's a positive or negative adjustment
+                if random.random() > 0.5:
+                    adjustment_amount = -adjustment_amount
+                
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Adjustment",
+                    transaction_date=simulation_date,
+                    amount=adjustment_amount,
+                    description=f"Premium adjustment for policy {policy['PolicyNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Policy",
+                    related_entity_id=policy['PolicyID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
+        except Exception as e:
+            print(f"Error generating adjustment transactions: {e}")
+        
+        return transactions
+    
+    def _generate_fee_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate fee transactions."""
+        transactions = []
+        
+        # Get a small random subset of policies for fees
+        try:
+            query = """
+            SELECT TOP 5 p.PolicyID, p.PolicyNumber
+            FROM Insurance.Policies p
+            WHERE p.Status = 'Active'
+            ORDER BY NEWID()
+            """
+            policies = execute_query(query)
+            
+            for policy in policies:
+                # Only generate fees for a small percentage of policies
+                if random.random() > 0.1:
+                    continue
+                
+                # Generate a fee amount
+                fee_amount = random.choice([15.0, 25.0, 30.0, 50.0])
+                
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Administrative Fee",
+                    transaction_date=simulation_date,
+                    amount=fee_amount,
+                    description=f"Administrative fee for policy {policy['PolicyNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Policy",
+                    related_entity_id=policy['PolicyID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
+        except Exception as e:
+            print(f"Error generating fee transactions: {e}")
+        
+        return transactions
+    
+    def _generate_interest_transactions(self, simulation_date: date) -> List[FinancialTransaction]:
+        """Generate interest transactions."""
+        transactions = []
+        
+        # Only generate interest transactions on the first day of the month
+        if simulation_date.day != 1:
+            return transactions
+        
+        # Get a small random subset of policies for interest
+        try:
+            query = """
+            SELECT TOP 10 p.PolicyID, p.PolicyNumber, p.CurrentPremium
+            FROM Insurance.Policies p
+            WHERE p.Status = 'Active'
+            ORDER BY NEWID()
+            """
+            policies = execute_query(query)
+            
+            for policy in policies:
+                # Only generate interest for a small percentage of policies
+                if random.random() > 0.3:
+                    continue
+                
+                # Generate an interest amount (small percentage of premium)
+                interest_amount = round(policy['CurrentPremium'] * random.uniform(0.01, 0.03), 2)
+                
+                # Generate a transaction reference
+                reference = self._generate_payment_reference(simulation_date)
+                
+                # Create a transaction
+                transaction = FinancialTransaction(
+                    transaction_type="Interest",
+                    transaction_date=simulation_date,
+                    amount=interest_amount,
+                    description=f"Interest for policy {policy['PolicyNumber']}",
+                    reference_number=reference,
+                    related_entity_type="Policy",
+                    related_entity_id=policy['PolicyID'],
+                    processed_date=datetime.combine(simulation_date, datetime.min.time()),
+                    status="Successful",
+                    created_by="System"
+                )
+                
+                transactions.append(transaction)
+        except Exception as e:
+            print(f"Error generating interest transactions: {e}")
+        
+        return transactions
+    
+    def _generate_payment_reference(self, payment_date: date) -> str:
+        """
+        Generate a random payment reference.
+        
+        Args:
+            payment_date: The date to use in the reference
+            
+        Returns:
+            A payment reference string in the format PMT-YYYYMMDD-NNNNN
+        """
+        # Format: PMT-YYYYMMDD-NNNNN where YYYYMMDD is the payment date and NNNNN is a 5-digit number
+        date_str = payment_date.strftime('%Y%m%d')
+        number = ''.join(random.choices(string.digits, k=5))
+        return f"PMT-{date_str}-{number}"

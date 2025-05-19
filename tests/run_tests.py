@@ -6,13 +6,16 @@ This script runs all the tests for the project, including:
 1. Unit tests
 2. Integration tests
 3. End-to-end tests
+4. Enhanced simulation tests
 
 Usage:
-    python run_tests.py [--e2e] [--unit] [--date YYYY-MM-DD]
+    python run_tests.py [--e2e] [--unit] [--integration] [--enhanced] [--date YYYY-MM-DD]
 
 Options:
     --e2e           Run end-to-end tests (requires database connection)
     --unit          Run unit tests only
+    --integration   Run integration tests only
+    --enhanced      Run enhanced simulation tests only
     --date          Simulation date for end-to-end tests (default: today)
 """
 
@@ -119,12 +122,39 @@ def run_e2e_tests(simulation_date):
         print(f"Error running end-to-end tests: {str(e)}")
         return False
 
+def run_enhanced_tests():
+    """Run enhanced simulation tests."""
+    print("Running enhanced simulation tests...")
+    # Set PYTHONPATH environment variable to include project root
+    env = os.environ.copy()
+    env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
+    
+    # Run pytest on the enhanced test files
+    result = subprocess.run(
+        ['python3', '-m', 'pytest', 
+         'tests/test_enhanced_simulation.py', 
+         'tests/unit/models/test_enhanced_models.py',
+         'tests/integration/test_enhanced_schema.py',
+         'tests/integration/test_initialize_db_enhanced.py',
+         '-v'], 
+        capture_output=True, 
+        text=True, 
+        env=env
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(f"Enhanced simulation tests failed with exit code {result.returncode}")
+        print(result.stderr)
+        return False
+    return True
+
 def main():
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description='Run tests for the insurance simulation project')
     parser.add_argument('--e2e', action='store_true', help='Run end-to-end tests')
     parser.add_argument('--unit', action='store_true', help='Run unit tests only')
     parser.add_argument('--integration', action='store_true', help='Run integration tests only')
+    parser.add_argument('--enhanced', action='store_true', help='Run enhanced simulation tests only')
     parser.add_argument('--date', type=parse_date, default=date.today(), help='Simulation date for end-to-end tests (YYYY-MM-DD)')
     
     args = parser.parse_args()
@@ -133,7 +163,7 @@ def main():
     os.chdir(project_root)
     
     # If no specific test type is specified, run all tests
-    run_all = not (args.unit or args.integration or args.e2e)
+    run_all = not (args.unit or args.integration or args.e2e or args.enhanced)
     
     # Run unit tests
     unit_success = True
@@ -150,8 +180,13 @@ def main():
     if args.e2e or run_all:
         e2e_success = run_e2e_tests(args.date)
     
+    # Run enhanced simulation tests if requested
+    enhanced_success = True
+    if args.enhanced or run_all:
+        enhanced_success = run_enhanced_tests()
+    
     # Overall success
-    success = unit_success and integration_success and e2e_success
+    success = unit_success and integration_success and e2e_success and enhanced_success
     
     # Print summary
     print("\nTest Summary:")
@@ -161,6 +196,8 @@ def main():
         print(f"Integration Tests: {'PASS' if integration_success else 'FAIL'}")
     if args.e2e or run_all:
         print(f"End-to-End Tests: {'PASS' if e2e_success else 'FAIL'}")
+    if args.enhanced or run_all:
+        print(f"Enhanced Simulation Tests: {'PASS' if enhanced_success else 'FAIL'}")
     
     # Exit with appropriate status code
     sys.exit(0 if success else 1)

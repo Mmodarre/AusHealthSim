@@ -10,15 +10,19 @@ The testing framework is organized as follows:
 tests/
 ├── unit/                  # Unit tests for individual components
 │   ├── models/            # Tests for data models
+│   │   └── test_enhanced_models.py  # Tests for enhanced data models
 │   ├── simulation/        # Tests for simulation modules
 │   └── utils/             # Tests for utility functions
 ├── integration/           # Integration tests for component interactions
 │   ├── test_db_integration.py        # Tests for database operations
+│   ├── test_enhanced_schema.py       # Tests for enhanced database schema
+│   ├── test_initialize_db_enhanced.py # Tests for database initialization with enhanced schema
 │   ├── test_model_integration.py     # Tests for model interactions with database
 │   ├── test_simulation_integration.py # Tests for simulation components
 │   ├── test_cdc_integration.py       # Tests for CDC functionality
 │   └── test_synthea_integration.py   # Tests for Synthea FHIR integration
 ├── test_date_consistency_e2e.py      # End-to-end test for date consistency
+├── test_enhanced_simulation.py       # Tests for enhanced simulation features
 ├── conftest.py                       # Pytest configuration and fixtures
 └── run_tests.py                      # Script to run all tests
 ```
@@ -33,6 +37,7 @@ Unit tests focus on testing individual components in isolation, using mocks and 
 - Utility functions
 - Simulation logic
 - Database utility functions (mocked)
+- Enhanced data models and their methods
 
 ### Integration Tests
 
@@ -43,6 +48,8 @@ Integration tests verify the interaction between different components of the sys
 - Simulation components working together
 - CDC (Change Data Capture) functionality
 - Synthea FHIR data integration
+- Enhanced database schema and operations
+- Database initialization with enhanced schema
 
 ### End-to-End Tests
 
@@ -51,6 +58,7 @@ End-to-end tests validate the entire system working together, simulating real-wo
 - Running a complete daily simulation
 - Verifying date consistency across all generated data
 - Testing the full workflow from data generation to database storage
+- Testing enhanced simulation features
 
 ## Date Consistency Testing
 
@@ -65,6 +73,16 @@ The date consistency tests verify that:
 5. All LastModified dates match the simulation date
 6. All provider agreement dates are relative to the simulation date
 7. All policy dates (except next premium due date) are relative to the simulation date
+
+## Enhanced Simulation Testing
+
+The enhanced simulation tests verify the functionality of the enhanced features, including:
+
+1. **Enhanced Data Models**: Testing the extended attributes of Member, Policy, Claim, and Provider models
+2. **New Data Models**: Testing the new FraudIndicator, FinancialTransaction, ActuarialMetric, and ClaimPattern models
+3. **Enhanced Database Schema**: Testing the extended tables and columns in the database
+4. **Data Generation Modules**: Testing the fraud pattern, financial transaction, provider billing, claim pattern, and actuarial data generation modules
+5. **Simulation Orchestration**: Testing the coordination of all enhanced features
 
 ## Running the Tests
 
@@ -84,6 +102,9 @@ python tests/run_tests.py --integration
 
 # Run only end-to-end tests
 python tests/run_tests.py --e2e --date 2022-10-22
+
+# Run only enhanced simulation tests
+python tests/run_tests.py --enhanced
 ```
 
 ### Using pytest directly
@@ -102,6 +123,12 @@ pytest tests/integration/test_db_integration.py
 
 # Run a specific test function
 pytest tests/integration/test_db_integration.py::TestDatabaseIntegration::test_connection
+
+# Run enhanced simulation tests
+pytest tests/test_enhanced_simulation.py
+
+# Run enhanced model tests
+pytest tests/unit/models/test_enhanced_models.py
 ```
 
 ## Test Coverage
@@ -114,6 +141,26 @@ The testing framework aims to provide comprehensive coverage of the codebase, wi
 4. Simulation flow and control
 5. CDC functionality
 6. Synthea FHIR integration
+7. Enhanced simulation features
+8. Enhanced database schema
+
+## Testing Enhanced Features
+
+When testing enhanced features, you need to initialize the database with the enhanced schema:
+
+```bash
+# Initialize database with enhanced schema
+./bin/initialize_db.sh --include-enhanced
+
+# Run enhanced simulation
+./bin/run_enhanced_simulation.sh --start-date 2023-01-01 --end-date 2023-01-31
+```
+
+Some tests for enhanced features will be skipped if the database is not initialized with the enhanced schema. You can check if the enhanced schema is available by running:
+
+```bash
+python -c "from health_insurance_au.utils.db_utils import execute_query; print(execute_query('SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = \'FraudIndicators\' AND TABLE_SCHEMA = \'Insurance\''))"
+```
 
 ## Continuous Integration
 
