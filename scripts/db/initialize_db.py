@@ -296,7 +296,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     Phone VARCHAR(20) NULL,
                     Email VARCHAR(100) NULL,
                     IsPreferredProvider BIT NOT NULL DEFAULT 0,
-                    AgreementStartDate DATE NULL,
+                    AgreementStartDate DATE NOT NULL,
                     AgreementEndDate DATE NULL,
                     IsActive BIT NOT NULL DEFAULT 1,
                     LastModified DATETIME2 NOT NULL 
