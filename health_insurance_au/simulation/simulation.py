@@ -757,7 +757,8 @@ class HealthInsuranceSimulation:
         start_date: date,
         end_date: date = None,
         frequency: str = 'daily',
-        use_dynamic_data: bool = True
+        use_dynamic_data: bool = True,
+        run_enhanced: bool = False
     ):
         """
         Run a historical simulation from start_date to end_date.
@@ -767,6 +768,7 @@ class HealthInsuranceSimulation:
             end_date: The end date for the simulation (default: today)
             frequency: The frequency of simulation runs ('daily', 'weekly', 'monthly')
             use_dynamic_data: Whether to use dynamically generated data instead of static JSON file
+            run_enhanced: Whether to run enhanced simulation features
         """
         if end_date is None:
             end_date = date.today()
@@ -779,7 +781,17 @@ class HealthInsuranceSimulation:
         elif frequency == 'weekly':
             date_increment = timedelta(days=7)
         elif frequency == 'monthly':
-            date_increment = timedelta(days=30)
+            # Start at first of the month
+            current_date = date(start_date.year, start_date.month, 1)
+            
+            # Function to increment by one month
+            def increment_month(d):
+                if d.month == 12:
+                    return date(d.year + 1, 1, 1)
+                else:
+                    return date(d.year, d.month + 1, 1)
+            
+            date_increment = None  # We'll handle monthly increments differently
         else:
             logger.error(f"Invalid frequency: {frequency}")
             return
@@ -810,7 +822,31 @@ class HealthInsuranceSimulation:
                 claim_process_percentage=random.uniform(70.0, 95.0)
             )
             
+            # Run enhanced simulation if requested
+            if run_enhanced:
+                from health_insurance_au.data_generation.enhanced_simulation import run_enhanced_simulation
+                
+                # Configure enhanced simulation
+                enhanced_config = {
+                    'generate_member_risk_profiles': random.random() < 0.3,  # 30% chance
+                    'generate_policy_risk_attributes': random.random() < 0.3,  # 30% chance
+                    'generate_provider_billing_attributes': random.random() < 0.3,  # 30% chance
+                    'apply_fraud_patterns': random.random() < 0.8,  # 80% chance
+                    'generate_claim_patterns': random.random() < 0.5,  # 50% chance
+                    'generate_financial_transactions': random.random() < 0.7,  # 70% chance
+                    'generate_actuarial_metrics': frequency == 'monthly',  # Only for monthly runs
+                    'actuarial_metrics_count': random.randint(30, 70),
+                    'claim_pattern_count': random.randint(10, 30),
+                    'financial_transaction_count': random.randint(20, 50)
+                }
+                
+                # Run enhanced simulation
+                run_enhanced_simulation(current_date, enhanced_config)
+            
             # Increment the date
-            current_date += date_increment
+            if frequency == 'monthly' and date_increment is None:
+                current_date = increment_month(current_date)
+            else:
+                current_date += date_increment
         
         logger.info(f"Historical simulation completed from {start_date} to {end_date}")
