@@ -63,7 +63,7 @@ class ClaimPatternGenerator:
                     patterns.append(pattern)
             
             # Check for high value pattern
-            avg_amount = sum(claim['ChargedAmount'] for claim in member_claims) / len(member_claims)
+            avg_amount = float(sum(claim['ChargedAmount'] for claim in member_claims)) / len(member_claims)
             if avg_amount > 1000:
                 # Check if this pattern already exists
                 pattern_key = (member_id, provider_id, "High Value")
@@ -171,7 +171,7 @@ class ClaimPatternGenerator:
             first_detected_date=first_date,
             last_detected_date=last_date,
             occurrence_count=len(claims),
-            average_amount=sum(claim['ChargedAmount'] for claim in claims) / len(claims),
+            average_amount=float(sum(claim['ChargedAmount'] for claim in claims)) / len(claims),
             confidence_score=min(0.9, 0.5 + 0.05 * len(claims)),
             status="Active"
         )
@@ -181,7 +181,7 @@ class ClaimPatternGenerator:
         service_dates = [claim['ServiceDate'] for claim in claims]
         first_date = min(service_dates)
         last_date = max(service_dates)
-        avg_amount = sum(claim['ChargedAmount'] for claim in claims) / len(claims)
+        avg_amount = float(sum(claim['ChargedAmount'] for claim in claims)) / len(claims)
         
         return ClaimPattern(
             member_id=member_id,
@@ -192,7 +192,7 @@ class ClaimPatternGenerator:
             last_detected_date=last_date,
             occurrence_count=len(claims),
             average_amount=avg_amount,
-            confidence_score=min(0.9, 0.5 + 0.0001 * avg_amount),
+            confidence_score=min(0.9, 0.5 + 0.0001 * float(avg_amount)),
             status="Active"
         )
     
@@ -210,7 +210,7 @@ class ClaimPatternGenerator:
             first_detected_date=first_date,
             last_detected_date=last_date,
             occurrence_count=len(claims),
-            average_amount=sum(claim['ChargedAmount'] for claim in claims) / len(claims),
-            confidence_score=min(0.9, 0.5 + 0.1 * (1 / ((last_date - first_date).days / len(claims) + 1))),
+            average_amount=float(sum(claim['ChargedAmount'] for claim in claims)) / len(claims),
+            confidence_score=min(0.9, 0.5 + 0.1 * (1 / (float((last_date - first_date).days) / len(claims) + 1))),
             status="Active"
         )
