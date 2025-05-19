@@ -204,13 +204,13 @@ def initialize_database(server=None, database=None, username=None, password=None
                     City VARCHAR(50) NOT NULL,
                     State VARCHAR(3) NOT NULL,
                     PostCode VARCHAR(10) NOT NULL,
-                    Country VARCHAR(50) NOT NULL DEFAULT 'Australia',
+                    Country VARCHAR(50) NOT NULL ,
                     MedicareNumber VARCHAR(15) NULL,
                     LHCLoadingPercentage DECIMAL(5,2) DEFAULT 0.00,
                     PHIRebateTier VARCHAR(10) DEFAULT 'Base',
-                    JoinDate DATE NOT NULL DEFAULT GETDATE(),
+                    JoinDate DATE NOT NULL ,
                     IsActive BIT NOT NULL DEFAULT 1,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE()
+                    LastModified DATETIME2 NOT NULL 
                 )
                 """)
                 
@@ -231,7 +231,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     IsActive BIT NOT NULL DEFAULT 1,
                     EffectiveDate DATE NOT NULL,
                     EndDate DATE NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE()
+                    LastModified DATETIME2 NOT NULL 
                 )
                 """)
                 
@@ -255,7 +255,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     PaymentMethod VARCHAR(20) NOT NULL DEFAULT 'Direct Debit',
                     LastPremiumPaidDate DATE NULL,
                     NextPremiumDueDate DATE NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_Policies_Members FOREIGN KEY (PrimaryMemberID) REFERENCES Insurance.Members (MemberID),
                     CONSTRAINT FK_Policies_Plans FOREIGN KEY (PlanID) REFERENCES Insurance.CoveragePlans (PlanID)
                 )
@@ -272,7 +272,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     StartDate DATE NOT NULL,
                     EndDate DATE NULL,
                     IsActive BIT NOT NULL DEFAULT 1,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_PolicyMembers_Policies FOREIGN KEY (PolicyID) REFERENCES Insurance.Policies (PolicyID),
                     CONSTRAINT FK_PolicyMembers_Members FOREIGN KEY (MemberID) REFERENCES Insurance.Members (MemberID),
                     CONSTRAINT UQ_PolicyMembers_PolicyMember UNIQUE (PolicyID, MemberID)
@@ -299,7 +299,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     AgreementStartDate DATE NULL,
                     AgreementEndDate DATE NULL,
                     IsActive BIT NOT NULL DEFAULT 1,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE()
+                    LastModified DATETIME2 NOT NULL 
                 )
                 """)
                 
@@ -326,7 +326,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     ProcessedDate DATE NULL,
                     PaymentDate DATE NULL,
                     RejectionReason VARCHAR(200) NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_Claims_Policies FOREIGN KEY (PolicyID) REFERENCES Insurance.Policies (PolicyID),
                     CONSTRAINT FK_Claims_Members FOREIGN KEY (MemberID) REFERENCES Insurance.Members (MemberID),
                     CONSTRAINT FK_Claims_Providers FOREIGN KEY (ProviderID) REFERENCES Insurance.Providers (ProviderID)
@@ -346,7 +346,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     PaymentStatus VARCHAR(20) NOT NULL DEFAULT 'Successful',
                     PeriodStartDate DATE NOT NULL,
                     PeriodEndDate DATE NOT NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_PremiumPayments_Policies FOREIGN KEY (PolicyID) REFERENCES Insurance.Policies (PolicyID)
                 )
                 """)
@@ -364,7 +364,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     RebatePercentage70Plus DECIMAL(5,2) NOT NULL,
                     EffectiveDate DATE NOT NULL,
                     EndDate DATE NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE()
+                    LastModified DATETIME2 NOT NULL 
                 )
                 """)
                 
@@ -380,7 +380,7 @@ def initialize_database(server=None, database=None, username=None, password=None
                     MedicareBenefit DECIMAL(10,2) NOT NULL,
                     EffectiveDate DATE NOT NULL,
                     EndDate DATE NULL,
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE()
+                    LastModified DATETIME2 NOT NULL 
                 )
                 """)
                 
@@ -392,8 +392,8 @@ def initialize_database(server=None, database=None, username=None, password=None
                     PatientFHIRID VARCHAR(100) NOT NULL,
                     MemberID INT NULL,
                     PatientData NVARCHAR(MAX) NOT NULL,
-                    ImportDate DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    ImportDate DATETIME2 NOT NULL ,
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_SyntheaPatients_Members FOREIGN KEY (MemberID) REFERENCES Insurance.Members (MemberID)
                 )
                 """)
@@ -407,8 +407,8 @@ def initialize_database(server=None, database=None, username=None, password=None
                     PatientFHIRID VARCHAR(100) NOT NULL,
                     ClaimID INT NULL,
                     EncounterData NVARCHAR(MAX) NOT NULL,
-                    ImportDate DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    ImportDate DATETIME2 NOT NULL ,
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_SyntheaEncounters_Claims FOREIGN KEY (ClaimID) REFERENCES Insurance.Claims (ClaimID)
                 )
                 """)
@@ -423,118 +423,14 @@ def initialize_database(server=None, database=None, username=None, password=None
                     EncounterFHIRID VARCHAR(100) NOT NULL,
                     ClaimID INT NULL,
                     ProcedureData NVARCHAR(MAX) NOT NULL,
-                    ImportDate DATETIME2 NOT NULL DEFAULT GETDATE(),
-                    LastModified DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    ImportDate DATETIME2 NOT NULL ,
+                    LastModified DATETIME2 NOT NULL ,
                     CONSTRAINT FK_SyntheaProcedures_Claims FOREIGN KEY (ClaimID) REFERENCES Insurance.Claims (ClaimID)
                 )
                 """)
+
                 
-                # Create stored procedures
-                logger.info("Creating stored procedures...")
-                
-                # Simulation.AddMembers
-                execute_script(conn, """
-                IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'Simulation.AddMembers') AND type in (N'P'))
-                    DROP PROCEDURE Simulation.AddMembers
-                """)
-                execute_script(conn, """
-                CREATE PROCEDURE Simulation.AddMembers
-                    @NumberOfMembers INT = 10
-                AS
-                BEGIN
-                    SET NOCOUNT ON;
-                    
-                    -- This is a placeholder procedure that will be implemented in Python
-                    -- The Python application will read from health_insurance_demo_10k.json
-                    -- and insert the data into the Insurance.Members table
-                    
-                    PRINT 'Adding ' + CAST(@NumberOfMembers AS VARCHAR) + ' new members';
-                END
-                """)
-                
-                # Simulation.AddCoveragePlans
-                execute_script(conn, """
-                IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'Simulation.AddCoveragePlans') AND type in (N'P'))
-                    DROP PROCEDURE Simulation.AddCoveragePlans
-                """)
-                execute_script(conn, """
-                CREATE PROCEDURE Simulation.AddCoveragePlans
-                    @NumberOfPlans INT = 5
-                AS
-                BEGIN
-                    SET NOCOUNT ON;
-                    
-                    -- This is a placeholder procedure that will be implemented in Python
-                    -- The Python application will create realistic health insurance plans
-                    -- based on Bupa.com.au and insert them into the Insurance.CoveragePlans table
-                    
-                    PRINT 'Adding ' + CAST(@NumberOfPlans AS VARCHAR) + ' new coverage plans';
-                END
-                """)
-                
-                # Simulation.CreateNewPolicies
-                execute_script(conn, """
-                IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'Simulation.CreateNewPolicies') AND type in (N'P'))
-                    DROP PROCEDURE Simulation.CreateNewPolicies
-                """)
-                execute_script(conn, """
-                CREATE PROCEDURE Simulation.CreateNewPolicies
-                    @NumberOfPolicies INT = 10
-                AS
-                BEGIN
-                    SET NOCOUNT ON;
-                    
-                    -- This is a placeholder procedure that will be implemented in Python
-                    -- The Python application will create new policies for members
-                    -- and insert them into the Insurance.Policies table
-                    
-                    PRINT 'Creating ' + CAST(@NumberOfPolicies AS VARCHAR) + ' new policies';
-                END
-                """)
-                
-                # Simulation.DailyProcessToCreateHistory
-                execute_script(conn, """
-                IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'Simulation.DailyProcessToCreateHistory') AND type in (N'P'))
-                    DROP PROCEDURE Simulation.DailyProcessToCreateHistory
-                """)
-                execute_script(conn, """
-                CREATE PROCEDURE Simulation.DailyProcessToCreateHistory
-                    @SimulationDate DATE = NULL,
-                    @AddNewMembers BIT = 1,
-                    @NewMembersCount INT = 5,
-                    @AddNewPlans BIT = 0,
-                    @NewPlansCount INT = 0,
-                    @CreateNewPolicies BIT = 1,
-                    @NewPoliciesCount INT = 3,
-                    @UpdateMembers BIT = 1,
-                    @MemberUpdatePercentage DECIMAL(5,2) = 2.00,
-                    @ProcessPolicyChanges BIT = 1,
-                    @PolicyChangePercentage DECIMAL(5,2) = 1.00,
-                    @GenerateHospitalClaims BIT = 1,
-                    @HospitalClaimsCount INT = 3,
-                    @GenerateGeneralClaims BIT = 1,
-                    @GeneralClaimsCount INT = 10,
-                    @ProcessPremiumPayments BIT = 1,
-                    @ProcessClaims BIT = 1,
-                    @ClaimProcessPercentage DECIMAL(5,2) = 80.00
-                AS
-                BEGIN
-                    SET NOCOUNT ON;
-                    
-                    -- Use current date if no simulation date provided
-                    IF @SimulationDate IS NULL
-                        SET @SimulationDate = GETDATE();
-                    
-                    PRINT 'Running daily simulation for ' + CONVERT(VARCHAR, @SimulationDate, 103);
-                    
-                    -- This is a placeholder procedure that will be implemented in Python
-                    -- The Python application will orchestrate all the daily processes
-                    -- based on the parameters provided
-                    
-                    PRINT 'Daily simulation completed for ' + CONVERT(VARCHAR, @SimulationDate, 103);
-                END
-                """)
-                
+  
                 logger.info("Database initialization completed successfully")
                 return True
         except Exception as e:
