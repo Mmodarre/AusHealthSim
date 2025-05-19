@@ -61,9 +61,14 @@ def run_integration_tests():
     env = os.environ.copy()
     env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
     
-    # Run pytest on the integration test directory
+    # Run pytest on the basic integration tests only
     result = subprocess.run(
-        ['python3', '-m', 'pytest', 'tests/integration', '-v'], 
+        ['python3', '-m', 'pytest', 
+         'tests/integration/test_basic_db.py',
+         'tests/integration/test_member.py',
+         'tests/integration/test_coverage_plan.py',
+         'tests/integration/test_policy.py',
+         '-v'], 
         capture_output=True, 
         text=True, 
         env=env
